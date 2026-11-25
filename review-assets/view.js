@@ -245,16 +245,29 @@ function viewport() {
   // hidden via CSS) -- the frame fills #stage exactly with no gap/shadow/
   // radius so it reads as the real site's own mobile view, not a "preview
   // inside a tool".
+  stage.classList.remove('scroll-x'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = '';
   width = stage.clientWidth;
   height = stage.clientHeight;
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)`;
  } else if (widthMode === 'fullwidth' || EMBED) {
+  stage.classList.remove('scroll-x'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = '';
   // Embed: khung lấp đầy stage (không chừa 8px) và dùng đúng màu nền của prototype → 1 vùng liền, không lộ dải nền RS.
   width = Math.max(320, stage.clientWidth - (EMBED ? 0 : 8));
   height = Math.max(320, stage.clientHeight - (EMBED ? 0 : 8));
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)` + (EMBED && embedBg ? `;background:${embedBg}` : '');
  } else {
-  const scale = Math.min(1, (stage.clientWidth - 8) / width);
+  // Zoom (mục 155): 'fit' = co vừa khoảng giữa 2 panel; '100' = đúng kích thước thật, #stage cuộn ngang nếu khung rộng hơn.
+  // 100% kiểu Figma (mục 156): main bỏ phần chừa chỗ cho panel → preview trải hết bề ngang, nằm SAU 2 panel; #stage chừa padding
+  // = độ rộng panel đang mở để cuộn ngang kéo được cả phần bị panel che ra giữa.
+  const zoom100 = zoomMode === '100';
+  document.body.classList.toggle('rs-zoom-100', zoom100);
+  let insetL = 0, insetR = 0;
+  if (zoom100) { if (!$('pagesPanel').hidden) insetL = Math.round($('pagesPanel').getBoundingClientRect().width); if (!$('sidebar').hidden) insetR = Math.round($('sidebar').getBoundingClientRect().width); }
+  stage.style.paddingLeft = zoom100 ? insetL + 'px' : ''; stage.style.paddingRight = zoom100 ? insetR + 'px' : '';
+  const overflowX = zoom100 && insetL + width + insetR + 8 > stage.clientWidth;
+  stage.classList.toggle('scroll-x', overflowX);
+  const scale = zoom100 ? 1 : Math.min(1, (stage.clientWidth - 8) / width);
+  shownScale = scale;
   if (widthMode === 1440) {
    // Desktop fills the stage's full height. NOTE: transform:scale() is
    // purely visual and does not affect layout/overflow math, so we must
@@ -264,15 +277,98 @@ function viewport() {
    height = Math.max(320, stage.clientHeight - 8);
   }
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(${scale})`;
+  // Lần đầu vào 100% (hoặc đổi thiết bị) → cuộn để khung căn giữa cửa sổ, 2 bên khuất đều sau panel như Figma.
+  const key = overflowX ? widthMode + '|' + zoomMode : '';
+  if (key && key !== zoomCenterKey) stage.scrollLeft = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
+  zoomCenterKey = key;
  }
  document.querySelectorAll('[data-width]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.width === String(widthMode))));
+ updateZoomButton();
 }
-function sidebar(open) { $('sidebar').hidden = !open; $('toggle').setAttribute('aria-expanded', String(open)); $('toggle').dataset.tooltip = open ? 'Ẩn bình luận' : 'Hiện bình luận'; if (!open) cancel(); setPinsVisible(open); }
+// Nút zoom trên header (mục 155): hiện % đang xem; bấm chuyển Vừa khung ↔ 100%. Shift+1 = vừa khung, Shift+0 = 100%.
+let zoomMode = 'fit', shownScale = 1, zoomCenterKey = '';
+try { if (localStorage.getItem('rs-zoom') === '100') zoomMode = '100'; } catch {}
+function setZoom(mode) { zoomMode = mode; try { localStorage.setItem('rs-zoom', mode); } catch {} viewport(); try { positionFloating(); } catch {} }
+function updateZoomButton() {
+ const b = $('zoomToggle'); if (!b) return;
+ b.hidden = isMobileChromeless() || widthMode === 'fullwidth' || EMBED;
+ const zoom100 = zoomMode === '100';
+ b.querySelector('.zoom-label').textContent = Math.round((zoom100 ? 1 : shownScale) * 100) + '%';
+ b.setAttribute('aria-pressed', String(zoom100));
+ const tip = zoom100 ? 'Vừa khung (Shift+1)' : 'Xem 100% (Shift+0)';
+ b.dataset.tooltip = tip; b.setAttribute('aria-label', tip);
+}
+if ($('zoomToggle')) $('zoomToggle').onclick = () => setZoom(zoomMode === '100' ? 'fit' : '100');
+window.addEventListener('keydown', e => {
+ if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+ if (e.code !== 'Digit0' && e.code !== 'Digit1') return;
+ const t = document.activeElement;
+ if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+ e.preventDefault(); setZoom(e.code === 'Digit0' ? '100' : 'fit');
+});
+$('stage').addEventListener('scroll', () => { try { positionFloating(); } catch {} }, { passive: true });
+// Panel kiểu Figma (mục 151): panel dính sát header/mép, main chừa chỗ khi panel mở → preview nằm giữa 2 panel.
+// Đo chiều cao header thật (header có thể xuống dòng ở màn hẹp) rồi tính lại khung preview.
+function syncPanelLayout() { const h = document.querySelector('header'); if (h && h.offsetHeight) document.documentElement.style.setProperty('--rs-header-h', h.offsetHeight + 'px'); document.body.classList.toggle('rs-pages-open', !$('pagesPanel').hidden); document.body.classList.toggle('rs-comments-open', !$('sidebar').hidden); syncReopenButtons(); try { viewport(); } catch {} }
+// Nút nổi mở lại panel (mục 152): khi panel ẩn vẫn còn icon layout ở góc trên, bấm để mở lại.
+function makeReopenButton(id, iconName, label, onClick) { const b = document.createElement('button'); b.type = 'button'; b.id = id; b.hidden = true; b.setAttribute('aria-label', label); b.dataset.tooltip = label; b.append(iconEl(iconName)); b.onclick = onClick; document.body.append(b); return b; }
+let pagesReopenBtn = null, sidebarReopenBtn = null, pagesPanelReady = false; // pagesPanelReady: danh sách trang đã vẽ (thay cho nút "Các trang" cũ trên header — mục 154)
+function syncReopenButtons() {
+ if (!pagesReopenBtn) pagesReopenBtn = makeReopenButton('pagesPanelReopen', 'layout', 'Hiện các trang', () => pagesPanelOpen(true));
+ if (!sidebarReopenBtn) sidebarReopenBtn = makeReopenButton('sidebarReopen', 'layoutRight', 'Hiện bình luận', () => sidebar(true));
+ pagesReopenBtn.hidden = !$('pagesPanel').hidden || !pagesPanelReady;
+ sidebarReopenBtn.hidden = !$('sidebar').hidden;
+}
+// Kéo mép panel để đổi độ rộng; double-click mép → về mặc định 256px (mục 153). Độ rộng nhớ theo từng người xem (localStorage).
+const PANEL_W_DEFAULT = 256, PANEL_W_MIN = 256, PANEL_W_MAX = 560; // không cho hẹp hơn mặc định (mục 156)
+function setPanelWidth(cssVar, key, w) {
+ const root = document.documentElement;
+ if (w == null) { root.style.removeProperty(cssVar); try { localStorage.removeItem(key); } catch {} }
+ else { root.style.setProperty(cssVar, w + 'px'); try { localStorage.setItem(key, String(w)); } catch {} }
+}
+function initPanelResize(panel, side, cssVar, key) {
+ try { const saved = parseInt(localStorage.getItem(key), 10); if (saved >= PANEL_W_MIN && saved <= PANEL_W_MAX) document.documentElement.style.setProperty(cssVar, saved + 'px'); } catch {}
+ const handle = document.createElement('div');
+ handle.className = 'rs-resize-handle'; handle.setAttribute('role', 'separator'); handle.setAttribute('aria-orientation', 'vertical');
+ handle.title = 'Kéo để đổi độ rộng · Nhấp đúp để về mặc định';
+ panel.append(handle);
+ let startX = 0, startW = 0, raf = 0;
+ const other = () => { const o = side === 'left' ? $('sidebar') : $('pagesPanel'); return o && !o.hidden ? o.getBoundingClientRect().width : 0; };
+ handle.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  startX = e.clientX; startW = panel.getBoundingClientRect().width;
+  handle.setPointerCapture(e.pointerId); handle.classList.add('dragging'); document.body.classList.add('rs-resizing');
+ });
+ handle.addEventListener('pointermove', e => {
+  if (!handle.classList.contains('dragging')) return;
+  const dx = side === 'left' ? e.clientX - startX : startX - e.clientX;
+  const max = Math.max(PANEL_W_MIN, Math.min(PANEL_W_MAX, window.innerWidth - other() - 320));
+  const w = Math.round(Math.min(max, Math.max(PANEL_W_MIN, startW + dx)));
+  document.documentElement.style.setProperty(cssVar, w + 'px');
+  if (!raf) raf = requestAnimationFrame(() => { raf = 0; try { viewport(); } catch {} });
+ });
+ const end = e => {
+  if (!handle.classList.contains('dragging')) return;
+  handle.classList.remove('dragging'); document.body.classList.remove('rs-resizing');
+  try { handle.releasePointerCapture(e.pointerId); } catch {}
+  const w = Math.round(panel.getBoundingClientRect().width);
+  setPanelWidth(cssVar, key, w === PANEL_W_DEFAULT ? null : w);
+  syncPanelLayout(); try { alignPagesToggle(); } catch {}
+ };
+ handle.addEventListener('pointerup', end);
+ handle.addEventListener('pointercancel', end);
+ handle.addEventListener('dblclick', () => { setPanelWidth(cssVar, key, null); syncPanelLayout(); try { alignPagesToggle(); } catch {} });
+}
+initPanelResize($('pagesPanel'), 'left', '--rs-pages-w', 'rs-pages-w');
+initPanelResize($('sidebar'), 'right', '--rs-comments-w', 'rs-comments-w');
+window.addEventListener('resize', syncPanelLayout);
+function sidebar(open) { $('sidebar').hidden = !open; const tg = $('toggle'); if (tg) { tg.setAttribute('aria-expanded', String(open)); tg.dataset.tooltip = open ? 'Ẩn bình luận' : 'Hiện bình luận'; } if (!open) cancel(); setPinsVisible(open); syncPanelLayout(); }
 // Ẩn/hiện các ghim vị trí bình luận trên website theo trạng thái panel
 // Bình luận — đóng panel (Shift+C, nút X, hoặc chế độ Toàn màn hình) thì ẩn
 // ghim; mở lại panel thì hiện lại đúng vị trí cũ.
 function setPinsVisible(visible) { try { C().doc.querySelectorAll('[data-review-pin]').forEach(p => { p.style.display = visible ? '' : 'none'; }); } catch {} }
-$('toggle').onclick = () => sidebar($('sidebar').hidden);
+if ($('toggle')) $('toggle').onclick = () => sidebar($('sidebar').hidden);
 $('close').onclick = () => sidebar(false);
 // Fullwidth ẩn cả 2 panel (không cần thiết khi đang xem site tràn hết
 // chiều rộng) và nhớ lại trạng thái cũ để mở lại đúng như trước khi rời
@@ -297,6 +393,7 @@ document.querySelectorAll('[data-width]').forEach(b => b.onclick = () => {
  viewport();
 });
 window.addEventListener('resize', viewport);
+syncPanelLayout();
 
 // Thiết bị được hỗ trợ theo từng dự án: config.devices là mảng con của
 // ['desktop','tablet','mobile','fullwidth']; thiếu khoá = bật tất cả (dự
@@ -354,8 +451,7 @@ function showRowTip(row, lab) {
  rsTip.style.top = (r.bottom + 6) + 'px';
 }
 function hideRowTip() { if (rsTip) rsTip.style.display = 'none'; }
-function pagesPanelOpen(open) { $('pagesPanel').hidden = !open; $('pagesToggle').dataset.tooltip = open ? 'Ẩn các trang' : 'Hiện các trang'; }
-$('pagesToggle').onclick = () => pagesPanelOpen($('pagesPanel').hidden);
+function pagesPanelOpen(open) { $('pagesPanel').hidden = !open; syncPanelLayout(); }
 $('pagesPanelClose').onclick = () => pagesPanelOpen(false);
 // Shift+A toggles the left pages panel, Shift+C toggles the right
 // comments panel — both no-ops while typing in a field, and both need a
@@ -371,8 +467,7 @@ window.addEventListener('keydown', e => {
  else sidebar($('sidebar').hidden);
 });
 function renderPagesPanel() {
- const btn = $('pagesToggle');
- btn.hidden = false; // danh sách trang hiển thị cho cả người chưa đăng nhập
+ pagesPanelReady = true; try { syncReopenButtons(); } catch {} // danh sách trang hiển thị cho cả người chưa đăng nhập
  alignPagesToggle();
  const isOwner = viewRole === 'owner';
  // Owner thấy toàn bộ trang (kể cả trang chưa ai bình luận). Reviewer chỉ
@@ -780,10 +875,17 @@ function render() {
  c.replies.forEach(r=>{const reply=node('div',undefined,'reply');reply.append(node('strong',r.author));if(r.content)reply.append(node('p',r.content));if(r.attachments&&r.attachments.length)reply.append(renderAttachmentStrip(r.attachments));card.append(reply);});
  const replyButton=document.createElement('button'); replyButton.className='reply-action'; replyButton.append(iconEl('reply'),document.createTextNode('Trả lời')); replyButton.hidden=!canComment(); replyButton.onclick=()=>startReply(c);card.append(replyButton);$('comments').append(card);
  });
- if(!$('comments').children.length)$('comments').append(node('p',status==='open'?'Chưa có bình luận đang sửa.':'Chưa có bình luận đã sửa.','empty'));
+ if(!$('comments').children.length)$('comments').append(commentsEmptyState(all));
  renderPins();
  renderPagesPanel();
  finishJump();
+}
+// Empty state panel Bình luận (mục 161) — nội dung theo tình huống.
+function commentsEmptyState(all) {
+ if (status === 'resolved') return emptyState({ icon: 'check', title: 'Chưa có bình luận đã sửa', text: 'Bình luận được đánh dấu đã sửa sẽ nằm ở đây.' });
+ if (all.length) return emptyState({ icon: 'check', title: 'Không còn bình luận cần sửa', text: 'Tất cả bình luận trên trang này đã được sửa.' });
+ if (canComment()) return emptyState({ icon: 'comments', title: 'Chưa có bình luận', text: 'Chọn một vị trí trên website để ghim góp ý đầu tiên cho trang này.', action: { label: 'Chọn vị trí trên website', icon: 'pin', onClick: () => $('pin').click() } });
+ return emptyState({ icon: 'comments', title: 'Chưa có bình luận', text: 'Đăng nhập bằng email được mời để bình luận trên trang này.' });
 }
 function renderPins() {
  if (EMBED && !embedReady) return;
@@ -817,6 +919,14 @@ function syncEmbedControls() {
  const want = embedView.device === 'tablet' ? '768' : '390';
  document.querySelectorAll('[data-width]').forEach(b => { if (b.dataset.width !== 'fullwidth' && b.dataset.width !== '1440') b.setAttribute('aria-pressed', String(b.dataset.width === want)); });
  if (typeof renderPagesPanel === 'function') renderPagesPanel();
+}
+// Dự án thường (mục 157): vẫn hiện VI/EN để đổi ngôn ngữ giao diện RS; công tắc Chế độ tối chỉ dành cho embed.
+if (!EMBED && $('embedView')) {
+ $('embedView').hidden = false;
+ const sw = document.querySelector('#embedView .ev-switch'); if (sw) sw.hidden = true;
+ const syncLangButtons = () => document.querySelectorAll('.ev-lang [data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === ((window.RS_I18N && RS_I18N.lang) || 'vi'))));
+ document.querySelectorAll('.ev-lang [data-lang]').forEach(b => b.onclick = () => { if (window.RS_I18N) RS_I18N.setLang(b.dataset.lang); embedView.lang = b.dataset.lang; syncLangButtons(); try { renderPagesPanel(); } catch {} try { syncPanelLayout(); } catch {} });
+ syncLangButtons();
 }
 if (EMBED) {
  document.body.classList.add('embed-mode');

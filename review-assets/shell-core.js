@@ -169,3 +169,18 @@ function renderIdentity(identity) {
  out.onclick = async () => { if (SUPABASE_READY && !identity.preview) await sb.auth.signOut(); location.href = rootPath('index.html'); };
  box.append(out);
 }
+
+// Empty state dùng chung (mục 161): icon trong vòng tròn nhạt + tiêu đề + mô tả + nút hành động tuỳ chọn.
+// emptyState({ icon: 'comments', title: '...', text: '...', action: { label: '...', icon: 'pin', onClick: fn } })
+function emptyState(o = {}) {
+  const box = node('div', undefined, 'empty-state');
+  if (o.icon && typeof iconEl === 'function') { const ic = node('div', undefined, 'empty-state-icon'); ic.append(iconEl(o.icon)); box.append(ic); }
+  if (o.title) box.append(node('p', o.title, 'empty-state-title'));
+  if (o.text) box.append(node('p', o.text, 'empty-state-text'));
+  if (o.action) {
+    const b = node('button', undefined, 'empty-state-action'); b.type = 'button';
+    if (o.action.icon && typeof iconEl === 'function') b.append(iconEl(o.action.icon));
+    b.append(document.createTextNode(o.action.label)); b.onclick = o.action.onClick; box.append(b);
+  }
+  return box;
+}
