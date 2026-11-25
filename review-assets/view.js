@@ -21,6 +21,8 @@ function C() {
  let inner = null; try { inner = frame.contentDocument && frame.contentDocument.getElementById('fr'); } catch {}
  return { doc: inner && inner.contentDocument, win: inner && inner.contentWindow, el: inner || frame };
 }
+// Máy thiết bị của prototype embed (Paave: #dev, tự co theo khung) — dùng cho nút tỷ lệ (mục 216).
+function embedDev() { if (!EMBED) return null; try { return frame.contentDocument && frame.contentDocument.getElementById('dev'); } catch { return null; } }
 function manifestRow(id) { return (config.pages || []).find(p => p.manifest && p.path === id); }
 function projectPageUrl(relPath) { return new URL('project/' + relPath.replace(/^\/+/, ''), location.href).href; }
 function embedEntryUrl(id) { return new URL(config.entry, location.href).href.split('#')[0] + (id ? '#' + encodeURIComponent(id) : ''); }
@@ -255,7 +257,7 @@ function viewport() {
   height = stage.clientHeight;
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)`;
  } else if (widthMode === 'fullwidth' || EMBED) {
-  stage.classList.remove('scroll-x','scroll-y'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = ''; stage.scrollLeft = 0; stage.scrollTop = 0;
+  stage.classList.remove('scroll-x','scroll-y'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = ''; if (!(EMBED && zoomMode === '100')) { stage.scrollLeft = 0; stage.scrollTop = 0; }
   // Mục 214: Toàn màn hình (không embed) → khung luôn rộng hết cửa sổ, panel mở thì NẰM ĐÈ lên (main không chừa chỗ), không co khung lại.
   document.body.classList.toggle('rs-fullwidth', widthMode === 'fullwidth' && !EMBED);
   // Mục 215: Toàn màn hình + 2 panel đóng → xem như web thật (ẩn header/panel, header tự hiện khi đưa chuột lên mép trên).
@@ -265,6 +267,8 @@ function viewport() {
   // Embed: khung lấp đầy stage (không chừa 8px) và dùng đúng màu nền của prototype → 1 vùng liền, không lộ dải nền RS.
   width = Math.max(320, stage.clientWidth - (EMBED || immersive ? 0 : 8));
   height = Math.max(320, stage.clientHeight - (EMBED || immersive ? 0 : 8));
+  // Mục 216: embed (Paave tự co #dev = min(1,(H-48)/h,(W-48)/w)) — '100%' → khung nhúng ≥ #dev + 48px để Paave vẽ 1:1, #stage cuộn.
+  if (EMBED) { const dev = embedDev(); if (zoomMode === '100' && dev && dev.offsetHeight) { width = Math.max(width, dev.offsetWidth + 48); height = Math.max(height, dev.offsetHeight + 48); stage.classList.toggle('scroll-x', width > stage.clientWidth); stage.classList.toggle('scroll-y', height > stage.clientHeight); } setTimeout(updateZoomButton, 80); }
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)` + (EMBED && embedBg ? `;background:${embedBg}` : '');
  } else {
   // Zoom (mục 155): 'fit' = co vừa khoảng giữa 2 panel; '100' = đúng kích thước thật, #stage cuộn ngang nếu khung rộng hơn.
@@ -280,8 +284,9 @@ function viewport() {
   stage.classList.toggle('scroll-x', overflowX);
   // Mục 206: Mobile/Tablet có chiều cao cố định (844/1024) → 'vừa khung' co theo CẢ chiều cao để thấy trọn khung thiết bị;
   // ở 100% thì #stage cuộn dọc khi khung cao hơn. Desktop cao bằng stage nên chỉ co theo chiều ngang.
-  const fitH = widthMode === 1440 ? 1 : (stage.clientHeight - 8) / height;
-  const scale = zoom100 ? 1 : Math.min(1, (stage.clientWidth - 8) / width, fitH);
+  // Mục 218: chừa 24px dưới / 16px mỗi bên để bóng đổ của khung không bị #stage (overflow:hidden) cắt.
+  const fitH = widthMode === 1440 ? 1 : (stage.clientHeight - 24) / height;
+  const scale = zoom100 ? 1 : Math.min(1, (stage.clientWidth - 32) / width, fitH);
   stage.classList.toggle('scroll-y', zoom100 && widthMode !== 1440 && height + 8 > stage.clientHeight);
   shownScale = scale;
   if (widthMode === 1440) {
@@ -290,7 +295,7 @@ function viewport() {
    // NOT divide by scale here -- doing so inflates the pre-transform
    // (layout) height whenever scale < 1, which is what was causing the
    // phantom vertical scrollbar on #stage. Use the plain stage height.
-   height = Math.max(320, stage.clientHeight - 8);
+   height = Math.max(320, stage.clientHeight - 24);
   }
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(${scale})`;
   // Lần đầu vào 100% (hoặc đổi thiết bị) → cuộn để khung căn giữa cửa sổ, 2 bên khuất đều sau panel như Figma.
@@ -310,9 +315,11 @@ try { if (localStorage.getItem('rs-zoom') === '100') zoomMode = '100'; } catch {
 function setZoom(mode) { try { closeZoomMenu(); } catch {} zoomMode = mode; try { localStorage.setItem('rs-zoom', mode); } catch {} viewport(); try { positionFloating(); } catch {} }
 function updateZoomButton() {
  const b = $('zoomToggle'); if (!b) return;
- b.hidden = isMobileChromeless() || widthMode === 'fullwidth' || EMBED;
+ const dev = EMBED ? embedDev() : null;
+ b.hidden = isMobileChromeless() || (EMBED ? !(dev && dev.offsetHeight) : widthMode === 'fullwidth');
  const zoom100 = zoomMode === '100';
- b.querySelector('.zoom-label').textContent = Math.round((zoom100 ? 1 : shownScale) * 100) + '%';
+ const sc = EMBED && dev && dev.offsetHeight ? dev.getBoundingClientRect().height / dev.offsetHeight : (zoom100 ? 1 : shownScale);
+ b.querySelector('.zoom-label').textContent = Math.round(Math.min(1, sc) * 100) + '%';
  b.removeAttribute('aria-pressed'); // mục 211: nút tỷ lệ luôn màu thường (không kiểu 'đang chọn' xanh)
  b.removeAttribute('data-tooltip'); b.setAttribute('aria-label', 'Thu phóng: ' + (zoom100 ? 'Kích thước thật (100%)' : 'Vừa khung'));
 }
@@ -497,7 +504,8 @@ syncPanelLayout();
   b.hidden = !on;
  });
  const group = document.querySelector('.devices');
- if (group && enabled.length <= 1) group.hidden = true;
+ // Mục 216: chỉ 1 thiết bị → ẩn các nút thiết bị nhưng GIỮ nút tỷ lệ (trừ khi thiết bị duy nhất là Toàn màn hình — không có tỷ lệ).
+ if (group && enabled.length <= 1) { document.querySelectorAll('.devices [data-width]').forEach(b => { b.hidden = true; }); group.classList.add('devices-zoom-only'); if (enabled[0] === 'fullwidth') group.hidden = true; }
  const first = (EMBED && enabled.includes('mobile')) ? 'mobile' : known.find(d => enabled.includes(d));
  if (first !== 'desktop') document.querySelector(`[data-width="${DEVICE_WIDTH[first]}"]`).click();
 })();
@@ -689,8 +697,8 @@ function renderDraftPin() {
  doc.querySelectorAll('[data-review-draft]').forEach(el=>el.remove());
  if (!pending) return;
  const pin = doc.createElement('div'); pin.dataset.reviewDraft=''; pin.textContent='+';
- pin.style.cssText='all:initial;position:fixed;pointer-events:none;z-index:2147483647;width:18px;height:18px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 14px/18px system-ui;box-shadow:0 0 0 3px #3155df33,0 2px 8px #0004;';
- doc.body.append(pin); positionPins();
+ pin.style.cssText='all:initial;position:absolute;pointer-events:none;z-index:2147483647;width:18px;height:18px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 14px/18px system-ui;box-shadow:0 0 0 3px #3155df33,0 2px 8px #0004;';
+ doc.documentElement.append(pin); positionPins();
 }
 function cancel() { resetReply(); closeFloating(); picking = false; pending = null; clearPicker(); composerAttach.reset(); try { C().doc.querySelectorAll('[data-review-draft]').forEach(el=>el.remove()); } catch {} $('composer').hidden = !canComment(); $('selection').hidden = true; $('cancel').hidden=true; setPinButton('idle'); try { C().doc.documentElement.style.cursor = ''; } catch {} $('hint').textContent = ''; $('content').value = ''; resizeContent(); }
 $('cancel').onclick = () => { cancel(); sidebar(true); };
@@ -991,14 +999,17 @@ function renderPins() {
  if (isMobileChromeless()) return;
  const pinsVisible = !$('sidebar').hidden;
  records.filter(c=>c.page===page&&c.status===status&&c.selector).forEach(c=>{
- const pin=doc.createElement('button');pin.dataset.reviewPin=c.id;pin.textContent=avatarLetter(c.author);pin.title=c.content;pin.setAttribute('aria-label',`Bình luận của ${c.author}: ${c.content}`);pin.style.cssText=`position:fixed;z-index:2147483647;width:28px;height:28px;border:2px solid white;border-radius:50%;background:${avatarColor(c.author)};color:white;font:600 13px system-ui;box-shadow:0 2px 8px #0003;cursor:pointer;padding:0;`;
+ const pin=doc.createElement('button');pin.dataset.reviewPin=c.id;pin.textContent=avatarLetter(c.author);pin.title=c.content;pin.setAttribute('aria-label',`Bình luận của ${c.author}: ${c.content}`);pin.style.cssText=`position:absolute;z-index:2147483647;width:28px;height:28px;border:2px solid white;border-radius:50%;background:${avatarColor(c.author)};color:white;font:600 13px system-ui;box-shadow:0 2px 8px #0003;cursor:pointer;padding:0;`;
  if(c.id===selectedId){pin.style.boxShadow='0 0 0 7px #e4512333,0 2px 8px #0003';}
  if(!pinsVisible)pin.style.display='none';
- pin.onclick=e=>{e.preventDefault();e.stopPropagation();sidebar(true);focusRecord(c);};doc.body.append(pin);
+ pin.onclick=e=>{e.preventDefault();e.stopPropagation();sidebar(true);focusRecord(c);};doc.documentElement.append(pin);
  }); positionPins();
 }
-function positionPins(){try{const doc=C().doc,win=C().win;doc.querySelectorAll('[data-review-pin], [data-review-draft]').forEach(pin=>{const c=pin.hasAttribute('data-review-draft')?pending:records.find(r=>r.id===pin.dataset.reviewPin);if(!c)return;let el;try{el=doc.querySelector(c.selector);}catch{}let x,y;if(el){const r=el.getBoundingClientRect();if(!r.width&&!r.height){pin.hidden=true;return;}x=r.left+r.width*c.offsetX;y=r.top+r.height*c.offsetY;}else{x=c.x*doc.documentElement.scrollWidth-win.scrollX;y=c.y*doc.documentElement.scrollHeight-win.scrollY;}pin.hidden=x<0||y<0||x>win.innerWidth||y>win.innerHeight;const half=pin.offsetWidth/2||14;pin.style.left=`${x-half}px`;pin.style.top=`${y-half}px`;});}catch{}}
-function installContent(){try{const doc=C().doc;try{const sb=doc.createElement('style');sb.textContent='html{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}';(doc.head||doc.documentElement).appendChild(sb);}catch{}doc.addEventListener('click',select,true);doc.addEventListener('pointermove',hoverPicker,true);doc.addEventListener('pointerleave',hideHover);doc.addEventListener('scroll',hideHover,true);doc.addEventListener('keydown',e=>{if(e.key==='Escape')cancel();});render();}catch(error){reportPreviewError(error);}}
+// Mục 217: pin neo theo tài liệu (absolute + scroll offset) → cuộn trang trình duyệt tự kéo theo; cuộn vùng con → cập nhật 1 lần/khung hình.
+let pinRaf=0;
+function schedulePins(){if(pinRaf)return;pinRaf=requestAnimationFrame(()=>{pinRaf=0;positionPins();try{positionFloating();}catch{}});}
+function positionPins(){try{const doc=C().doc,win=C().win;doc.querySelectorAll('[data-review-pin], [data-review-draft]').forEach(pin=>{const c=pin.hasAttribute('data-review-draft')?pending:records.find(r=>r.id===pin.dataset.reviewPin);if(!c)return;let el;try{el=doc.querySelector(c.selector);}catch{}let x,y;if(el){const r=el.getBoundingClientRect();if(!r.width&&!r.height){pin.hidden=true;return;}x=r.left+r.width*c.offsetX;y=r.top+r.height*c.offsetY;}else{x=c.x*doc.documentElement.scrollWidth-win.scrollX;y=c.y*doc.documentElement.scrollHeight-win.scrollY;}pin.hidden=x<0||y<0||x>win.innerWidth||y>win.innerHeight;const half=pin.offsetWidth/2||14;pin.style.left=`${x-half+win.scrollX}px`;pin.style.top=`${y-half+win.scrollY}px`;});}catch{}}
+function installContent(){try{const doc=C().doc;try{const sb=doc.createElement('style');sb.textContent='html{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}';(doc.head||doc.documentElement).appendChild(sb);}catch{}doc.addEventListener('click',select,true);doc.addEventListener('pointermove',hoverPicker,true);doc.addEventListener('pointerleave',hideHover);doc.addEventListener('scroll',hideHover,true);doc.addEventListener('scroll',schedulePins,{capture:true,passive:true});try{C().win.addEventListener('resize',schedulePins);}catch{}doc.addEventListener('keydown',e=>{if(e.key==='Escape')cancel();});render();}catch(error){reportPreviewError(error);}}
 frame.addEventListener('load',()=>{cancel();if(EMBED){embedReady=false;return;}try{page=getPage();}catch{}installContent();});
 setInterval(()=>{try{const next=getPage();if(next!==page){page=next;cancel();render();}positionPins();positionPicker();positionFloating();}catch{}},80);
 
@@ -1050,7 +1061,7 @@ if (EMBED) {
   if (!d.ready) { embedReady = false; return; }
   const row = manifestRow(d.id);
   embedId = d.id; embedKey = (row && row.kind === 'edge') ? d.id : (d.screen || d.id);
-  embedReady = true; page = '/' + embedKey;
+  embedReady = true; setTimeout(updateZoomButton, 120); page = '/' + embedKey;
   syncEmbedBg(); cancel(); installContent();
  });
 }

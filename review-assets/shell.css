@@ -390,3 +390,8 @@ body.rs-immersive #pagesPanelReopen,body.rs-immersive #sidebarReopen{display:non
 }
 .rs-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#202637;color:#fff;font-size:13px;line-height:1.4;padding:8px 14px;border-radius:8px;z-index:70;box-shadow:0 8px 24px #19264c33;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
 .rs-toast.show{opacity:1}
+/* Mục 216: dự án 1 thiết bị → nhóm .devices chỉ còn nút tỷ lệ (bỏ vạch ngăn + lề trái) */
+.devices.devices-zoom-only .zoom-toggle{margin-left:0}
+.devices.devices-zoom-only .zoom-toggle::before{display:none}
+/* Mục 218: bóng đổ khung thiết bị gọn hơn (lan ≤ 24px) để nằm trong khoảng chừa của #stage, không bị cắt ngang */
+#frameBox{box-shadow:0 6px 18px #2026371a,0 1px 3px #2026370f}
