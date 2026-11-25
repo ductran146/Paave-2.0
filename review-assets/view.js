@@ -960,8 +960,24 @@ if (EMBED) {
 frame.src = EMBED ? embedEntryUrl(initialPage) : (initialPage ? projectPageUrl(initialPage) : config.entry);
 viewport();
 if(location.protocol==='file:')reportPreviewError(new Error('Local file cannot provide same-origin iframe access'));
+// Lượt truy cập (mục 166): ghi 1 lượt / phiên trình duyệt / dự án vào Supabase (bảng project_visits).
+// Không ghi khi: chạy local (app, localhost, file), xem thử ?preview=, owner đã đăng nhập, hoặc trình duyệt
+// đã bật "Không tính lượt truy cập trên trình duyệt này" ở trang Tổng quan (localStorage rs-no-track).
+async function trackVisit(role) {
+ try {
+  if (!SUPABASE_READY || !config.projectId) return;
+  if (location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname)) return;
+  if (new URLSearchParams(location.search).has('preview')) return;
+  if (role === 'owner') return;
+  try { if (localStorage.getItem('rs-no-track') === '1') return; } catch {}
+  const key = 'rs-visit-' + config.projectId;
+  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch {}
+  await sb.from('project_visits').insert({ project_id: config.projectId });
+ } catch {}
+}
 (async function initAuth(){
  const identity = await resolveSession();
+ trackVisit(identity.signedIn ? identity.role : null);
  if (identity.signedIn) { await applyIdentity(identity); return; }
  pagesPanelOpen(true); renderPagesPanel(); // chưa đăng nhập vẫn xem/chuyển trang được
  if (!SUPABASE_READY) $('emailHint').textContent='Chưa cấu hình Supabase — xem supabase/SETUP.md. (Thêm ?preview=owner hoặc ?preview=reviewer vào địa chỉ để xem thử giao diện.)';

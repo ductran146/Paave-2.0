@@ -193,3 +193,6 @@ header{height:56px;padding:0 16px;gap:16px}
 .empty-state-action{margin-top:16px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#3155df;border-color:#c5d0ff;background:#fff}
 .empty-state-action:hover{background:#f3f6ff}
 .empty-state-action .icon{width:16px;height:16px}
+/* Lượt truy cập trên trang Tổng quan (mục 166) */
+.track-toggle{display:inline-flex;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:#687186;cursor:pointer}
+.track-toggle input{width:16px;height:16px;margin:0;accent-color:#3155df;cursor:pointer}

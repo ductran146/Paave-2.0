@@ -12,6 +12,30 @@
  for (const [label, value] of [['Đang sửa', open], ['Đã sửa', scoped.length - open], ['Trang có phản hồi', pages.filter(p => pageRecords(records, p).length).length]]) {
   const tile = document.createElement('div'); tile.append(node('strong', String(value)), node('span', label)); $('totals').append(tile);
  }
+ renderVisits();
+
+ // Lượt truy cập (mục 166): đếm từ bảng project_visits (chỉ owner đọc được). Khách mở link review → +1 lượt/phiên.
+ // Không tính: bản local, owner đã đăng nhập, và trình duyệt đã bật công tắc bên dưới.
+ async function renderVisits() {
+  const tile = document.createElement('div'); tile.className = 'visits-tile';
+  const num = node('strong', '…'), sub = node('span', 'Lượt truy cập');
+  tile.append(num, sub); $('totals').append(tile);
+  const toggle = document.createElement('label'); toggle.className = 'track-toggle';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  try { cb.checked = localStorage.getItem('rs-no-track') === '1'; } catch {}
+  cb.onchange = () => { try { cb.checked ? localStorage.setItem('rs-no-track', '1') : localStorage.removeItem('rs-no-track'); } catch {} };
+  toggle.append(cb, node('span', 'Không tính lượt truy cập trên trình duyệt này'));
+  $('totals').after(toggle);
+  if (!sb) { num.textContent = '—'; return; }
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [all, week] = await Promise.all([
+   sb.from('project_visits').select('id', { count: 'exact', head: true }).eq('project_id', config.projectId),
+   sb.from('project_visits').select('id', { count: 'exact', head: true }).eq('project_id', config.projectId).gte('created_at', since),
+  ]);
+  if (all.error) { num.textContent = '—'; sub.textContent = 'Lượt truy cập (chưa chạy supabase/project-visits.sql)'; return; }
+  num.textContent = String(all.count || 0);
+  sub.textContent = 'Lượt truy cập · 7 ngày qua: ' + (week.count || 0);
+ }
 
  // "Phản hồi theo trang" — số trang trong 1 dự án luôn có giới hạn (do
  // chính review.config.js khai báo lúc import), khác với số bình luận
