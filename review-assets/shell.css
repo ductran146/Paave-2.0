@@ -395,3 +395,8 @@ body.rs-immersive #pagesPanelReopen,body.rs-immersive #sidebarReopen{display:non
 .devices.devices-zoom-only .zoom-toggle::before{display:none}
 /* Mục 218: bóng đổ khung thiết bị gọn hơn (lan ≤ 24px) để nằm trong khoảng chừa của #stage, không bị cắt ngang */
 #frameBox{box-shadow:0 6px 18px #2026371a,0 1px 3px #2026370f}
+/* Mục 219: công tắc Chế độ tối — bỏ viền/padding thừa từ quy tắc input chung (viền 1px làm lòng 32px → nút tròn chạm mép phải khi bật) */
+.ev-switch input{border:0!important;padding:0;box-sizing:border-box;width:34px;height:20px;outline:none;box-shadow:none}
+.ev-switch input:focus-visible{box-shadow:0 0 0 3px rgba(47,85,231,.25)}
+/* Mục 220: nhãn "Chế độ tối" đứng trước, công tắc sau */
+.ev-switch{flex-direction:row-reverse}
