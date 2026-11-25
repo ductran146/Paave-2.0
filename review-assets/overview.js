@@ -73,7 +73,7 @@
   const row = document.createElement('a'); row.className = 'feedback-row';
   row.href = '../index.html?page=' + encodeURIComponent(p ? p.path : '') + '&comment=' + encodeURIComponent(c.id);
   const head = node('div', undefined, 'feedback-head');
-  head.append(node('span', c.author, 'feedback-email'), node('span', c.status === 'open' ? 'Đang sửa' : 'Đã sửa', 'status-chip ' + (c.status === 'open' ? 'status-open' : 'status-resolved')));
+  head.append(Object.assign(node('span', c.author, 'feedback-email'), { title: c.author }), node('span', c.status === 'open' ? 'Đang sửa' : 'Đã sửa', 'status-chip ' + (c.status === 'open' ? 'status-open' : 'status-resolved')));
   row.append(head, node('small', new Date(c.createdAt).toLocaleString('vi-VN'), 'feedback-time'), node('p', c.content, 'feedback-content'));
   latest.append(row);
  }
@@ -96,7 +96,7 @@
   const list = $('memberList'); list.replaceChildren();
   for (const m of members) {
    const row = node('div', undefined, 'member-row');
-   row.append(node('span', m.email), node('small', m.role === 'owner' ? 'Owner' : 'Khách hàng'));
+   row.append(Object.assign(node('span', m.email), { title: m.email }), node('small', m.role === 'owner' ? 'Owner' : 'Khách hàng'));
    list.append(row);
   }
   if (!members.length) list.append(node('p', 'Chưa có ai được cấp quyền.', 'empty'));

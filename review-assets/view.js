@@ -42,13 +42,16 @@ let records = [], page = '', status = 'open', picking = false, pending = null, w
 let floating = null, selectedId = null, replyTo = null;
 function canComment() { return myRole === 'owner' || myRole === 'reviewer'; }
 function canEditComment(c) { return canComment() && c.author === myEmail; }
-async function saveCommentEdit(c, newContent) {
+async function saveCommentEdit(c, newContent, picker) {
  newContent = newContent.trim();
- if (!newContent && !(c.attachments && c.attachments.length)) return false;
+ const hasImages = picker ? picker.hasItems() : !!(c.attachments && c.attachments.length);
+ if (!newContent && !hasImages) return false;
  if (!SUPABASE_READY) { $('hint').textContent = 'Chế độ xem thử — chưa nối Supabase nên không lưu được thay đổi thật.'; return false; }
- const { error } = await sb.from('comments').update({ content: newContent }).eq('id', c.id);
+ let attachments = c.attachments || [];
+ if (picker) { try { attachments = await picker.uploadAll(); } catch (err) { $('hint').textContent = 'Không tải được ảnh: ' + err.message; return false; } }
+ const { error } = await sb.from('comments').update({ content: newContent, attachments }).eq('id', c.id);
  if (error) { $('hint').textContent = 'Không lưu được: ' + error.message; return false; }
- c.content = newContent;
+ c.content = newContent; c.attachments = attachments;
  return true;
 }
 
@@ -67,7 +70,7 @@ function createAttachPicker(hintTarget, onChange) {
   items.forEach((it, i) => {
    const thumb = node('span', undefined, 'attach-thumb');
    const im = document.createElement('img'); im.src = it.previewUrl; im.alt = '';
-   const rm = document.createElement('button'); rm.type = 'button'; rm.setAttribute('aria-label', 'Bỏ ảnh này'); rm.append(iconEl('close'));
+   const rm = document.createElement('button'); rm.type = 'button'; rm.setAttribute('aria-label', 'Bỏ ảnh này'); rm.title = 'Bỏ ảnh này'; rm.append(iconEl('closeX'));
    rm.onclick = () => { items.splice(i, 1); renderStrip(); };
    thumb.append(im, rm); strip.append(thumb);
   });
@@ -91,12 +94,14 @@ function createAttachPicker(hintTarget, onChange) {
  }
  async function uploadAll() {
   const out = [];
-  for (const it of items) out.push(await uploadCommentAttachment(it.file));
+  for (const it of items) out.push(it.existing ? it.existing : await uploadCommentAttachment(it.file));
   return out;
  }
  function reset() { items.length = 0; renderStrip(); }
  function hasItems() { return items.length > 0; }
- return { btn, strip, fileInput, attachPasteTo, uploadAll, reset, hasItems };
+ // Sửa bình luận (mục 180): nạp ảnh đã đính kèm thành thumbnail bỏ được; uploadAll giữ nguyên ảnh cũ còn lại.
+ function setExisting(list) { items.length = 0; (list || []).forEach(a => items.push({ existing: a, previewUrl: a.url })); renderStrip(); }
+ return { btn, strip, fileInput, attachPasteTo, uploadAll, reset, hasItems, setExisting };
 }
 
 const EMOJIS = ['👍','👎','😀','😂','😍','😢','😡','🤔','👏','🙏','🔥','🎉','❤️','✅','❌','⭐','👀','💡','🚀','😅','😎','🙌','💯','⚠️','😴','🤝','😮','🥳','👌','😊'];
@@ -177,7 +182,7 @@ async function applyIdentity(identity, justSignedIn) {
  if (viewRole === 'owner') pagesPanelOpen(true);
  $('overviewLink').hidden = viewRole !== 'owner';
  $('emailForm').hidden = true; $('otpForm').hidden = true;
- $('identity').hidden = false; $('signedEmail').textContent = myEmail + (identityPreview ? ' (xem thử)' : '');
+ $('identity').hidden = false; $('signedEmail').textContent = myEmail + (identityPreview ? ' (xem thử)' : ''); $('signedEmail').title = myEmail; $('headerAccount').replaceChildren(accountMenu(myEmail + (identityPreview ? ' (xem thử)' : ''), [{ label: 'Đổi email', icon: 'logout', onClick: () => { $('changeEmail').click(); sidebar(true); } }])); $('headerAccount').hidden = false;
  cancel();
  $('hint').textContent = !SUPABASE_READY ? 'Chế độ xem thử — chưa nối Supabase nên bình luận sẽ không được lưu thật.'
   : canComment() ? ''
@@ -214,7 +219,7 @@ $('emailForm').onsubmit = async e => {
  $('emailHint').textContent = 'Đang gửi mã…';
  const { error } = await sb.auth.signInWithOtp({ email });
  if (error) { $('emailHint').textContent = 'Không gửi được mã: ' + error.message; return; }
- pendingEmail = email; $('emailForm').hidden = true; $('otpForm').hidden = false; $('otpEmail').textContent = email; $('otpCode').value = ''; $('otpHint').textContent = ''; $('otpCode').focus();
+ pendingEmail = email; $('emailForm').hidden = true; $('otpForm').hidden = false; $('otpEmail').textContent = email; $('otpEmail').title = email; $('otpCode').value = ''; $('otpHint').textContent = ''; $('otpCode').focus();
 };
 $('otpBack').onclick = () => { $('otpForm').hidden = true; $('emailForm').hidden = false; $('emailHint').textContent = ''; };
 $('otpForm').onsubmit = async e => {
@@ -227,7 +232,7 @@ $('otpForm').onsubmit = async e => {
 $('changeEmail').onclick = async () => {
  if (SUPABASE_READY && !identityPreview) await sb.auth.signOut();
  myEmail = ''; myRole = null; identityPreview = false; cancel(); $('content').value = ''; resizeContent();
- $('identity').hidden = true; $('emailForm').hidden = false; $('otpForm').hidden = true; $('email').value = ''; $('emailHint').textContent = '';
+ $('identity').hidden = true; $('headerAccount').hidden = true; $('headerAccount').replaceChildren(); $('emailForm').hidden = false; $('otpForm').hidden = true; $('email').value = ''; $('emailHint').textContent = '';
  $('composer').hidden = true; $('overviewLink').hidden = true;
  records = []; render(); renderPagesPanel(); $('email').focus();
 };
@@ -566,7 +571,7 @@ function startPicker() {
  const box = doc.createElement('div'), dot = doc.createElement('div');
  box.dataset.reviewPicker = ''; dot.dataset.reviewPicker = '';
  box.style.cssText = 'all:initial;position:fixed;pointer-events:none;z-index:2147483646;border:2px solid #3155df;background:#3155df12;box-sizing:border-box;display:none;';
- dot.style.cssText = 'all:initial;position:fixed;pointer-events:none;z-index:2147483647;width:28px;height:28px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 20px/28px system-ui;box-shadow:0 2px 10px #0004;display:none;';
+ dot.style.cssText = 'all:initial;position:fixed;pointer-events:none;z-index:2147483647;width:18px;height:18px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 14px/18px system-ui;box-shadow:0 2px 8px #0004;display:none;';
  dot.textContent = '+';
  doc.head.append(style); doc.body.append(box, dot);
  const overlay = document.createElement('div');
@@ -587,7 +592,7 @@ function hoverPicker(e) {
  if (!picking || !pickerUI) return;
  const rect = e.target.getBoundingClientRect();
  Object.assign(pickerUI.box.style, {display:'block',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
- Object.assign(pickerUI.dot.style, {display:'block',left:(e.clientX-14)+'px',top:(e.clientY-14)+'px'});
+ Object.assign(pickerUI.dot.style, {display:'block',left:(e.clientX-11)+'px',top:(e.clientY-11)+'px'}); // chấm 18px + viền 2px = 22px (mục 191)
 }
 function positionPicker() {
  if(!pickerUI?.overlay)return;
@@ -601,12 +606,14 @@ function renderDraftPin() {
  doc.querySelectorAll('[data-review-draft]').forEach(el=>el.remove());
  if (!pending) return;
  const pin = doc.createElement('div'); pin.dataset.reviewDraft=''; pin.textContent='+';
- pin.style.cssText='all:initial;position:fixed;pointer-events:none;z-index:2147483647;width:28px;height:28px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 20px/28px system-ui;box-shadow:0 0 0 5px #3155df33,0 2px 10px #0004;';
+ pin.style.cssText='all:initial;position:fixed;pointer-events:none;z-index:2147483647;width:18px;height:18px;border:2px solid white;border-radius:50%;background:#3155df;color:white;text-align:center;font:600 14px/18px system-ui;box-shadow:0 0 0 3px #3155df33,0 2px 8px #0004;';
  doc.body.append(pin); positionPins();
 }
-function cancel() { resetReply(); closeFloating(); picking = false; pending = null; clearPicker(); composerAttach.reset(); try { C().doc.querySelectorAll('[data-review-draft]').forEach(el=>el.remove()); } catch {} $('composer').hidden = !canComment(); $('selection').hidden = true; $('cancel').hidden=true; $('pinLabel').textContent = 'Chọn vị trí trên website'; try { C().doc.documentElement.style.cursor = ''; } catch {} $('hint').textContent = ''; $('content').value = ''; resizeContent(); }
+function cancel() { resetReply(); closeFloating(); picking = false; pending = null; clearPicker(); composerAttach.reset(); try { C().doc.querySelectorAll('[data-review-draft]').forEach(el=>el.remove()); } catch {} $('composer').hidden = !canComment(); $('selection').hidden = true; $('cancel').hidden=true; setPinButton('idle'); try { C().doc.documentElement.style.cursor = ''; } catch {} $('hint').textContent = ''; $('content').value = ''; resizeContent(); }
 $('cancel').onclick = () => { cancel(); sidebar(true); };
-$('pin').onclick = () => { if (!canComment()) return; cancel(); selectedId=null; sidebar(true); try { C().doc.documentElement.style.cursor = 'crosshair'; picking = true; $('cancel').hidden=false; startPicker(); $('pinLabel').textContent = 'Đang chọn vị trí…'; $('hint').textContent = 'Bấm vào phần tử muốn góp ý. Nhấn Esc để hủy chọn vị trí.'; } catch (error) { picking=false; clearPicker(); $('pinLabel').textContent='Chọn vị trí trên website'; reportPreviewError(error); } };
+// Mục 193: 1 nút duy nhất — đang chọn / đã chọn vị trí thì nút thành "Hủy chọn"/"Bỏ vị trí" (icon X), bấm để hủy; Esc vẫn hủy.
+function setPinButton(mode) { const lbl = { idle: 'Chọn vị trí', picking: 'Hủy chọn', pending: 'Bỏ vị trí' }[mode] || 'Chọn vị trí'; $('pinLabel').textContent = lbl; const ic = $('pin').querySelector('.icon'); if (ic) ic.innerHTML = ICONS[mode === 'idle' ? 'target' : 'closeX'] || ''; $('pin').classList.toggle('is-cancel', mode !== 'idle'); }
+$('pin').onclick = () => { if (picking || pending) { cancel(); sidebar(true); return; } if (!canComment()) return; cancel(); selectedId=null; sidebar(true); try { C().doc.documentElement.style.cursor = 'crosshair'; picking = true; $('cancel').hidden=false; startPicker(); setPinButton('picking'); $('hint').textContent = 'Bấm vào phần tử muốn góp ý. Nhấn Esc để hủy chọn vị trí.'; } catch (error) { picking=false; clearPicker(); setPinButton('idle'); reportPreviewError(error); } };
 window.addEventListener('keydown', e => { if (e.key === 'Escape') { cancel(); sidebar(true); } });
 document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { status = b.dataset.status; render(); });
 function selectorFor(el) { if (el.id) return '#' + CSS.escape(el.id); const parts = []; while (el && el.tagName !== 'HTML') { const tag = el.tagName.toLowerCase(); const siblings = [...el.parentElement.children].filter(x => x.tagName === el.tagName); parts.unshift(`${tag}:nth-of-type(${siblings.indexOf(el)+1})`); el = el.parentElement; } return parts.join(' > '); }
@@ -618,7 +625,7 @@ function select(e) {
  pending = { selector: selectorFor(el), elementText: el.textContent.trim().slice(0,180), offsetX: (e.clientX-rect.left)/Math.max(rect.width,1), offsetY: (e.clientY-rect.top)/Math.max(rect.height,1), x: (e.clientX+win.scrollX)/doc.documentElement.scrollWidth, y: (e.clientY+win.scrollY)/doc.documentElement.scrollHeight, viewport: {width:win.innerWidth,height:win.innerHeight}, device:width<600?'mobile':width<1000?'tablet':'desktop' };
  picking = false; clearPicker(); renderDraftPin(); doc.documentElement.style.cursor = '';
  $('selection').hidden = false; $('cancel').hidden=false; $('selection').textContent = 'Vị trí: ' + (pending.elementText.slice(0,70) || pending.selector);
- $('pinLabel').textContent = 'Chọn lại vị trí'; openFloating(pending);
+ setPinButton('pending'); openFloating(pending);
 }
 async function submitComment(content, attachments) {
  attachments = attachments || [];
@@ -667,7 +674,8 @@ $('composer').onsubmit=async e=>{
  }catch(err){$('hint').textContent='Không tải được ảnh: '+err.message;}
  finally{$('sendComment').disabled=false;}
 };
-function resizeContent(){$('content').style.height='auto';$('content').style.height=$('content').scrollHeight+'px';}
+// Ô bình luận (mục 190): 1 dòng mặc định, tự cao theo nội dung, tối đa 3 dòng (max-height trong CSS) — quá 3 dòng thì cuộn trong ô.
+function resizeContent(){const el=$('content');el.style.height='auto';el.style.height=el.scrollHeight+'px';el.style.overflowY=el.scrollHeight>el.clientHeight+1?'auto':'hidden';}
 $('content').addEventListener('input',resizeContent);
 $('content').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&!e.isComposing){e.preventDefault();$('composer').requestSubmit();}});
 function closeFloating(){if(floating){floating.panel.remove();floating=null;}}
@@ -724,6 +732,7 @@ function openFloating(anchor,record=null){
   panel.append(authorRow);
   const bodyWrap=node('div',undefined,'note-body-wrap');
   renderPopupBody=()=>{
+   panel.classList.remove('is-editing');
    bodyWrap.replaceChildren();
    if(record.content)bodyWrap.append(node('p',record.content,'body compact'));
    if(record.attachments&&record.attachments.length)bodyWrap.append(renderAttachmentStrip(record.attachments));
@@ -732,15 +741,17 @@ function openFloating(anchor,record=null){
    bodyWrap.replaceChildren();
    const form=node('form',undefined,'edit-comment-form');
    const ta=document.createElement('textarea');ta.value=record.content;ta.maxLength=4000;
+   const editPicker=createAttachPicker($('hint'));editPicker.setExisting(record.attachments);editPicker.attachPasteTo(ta);
+   const editEmoji=createEmojiPicker(()=>ta);panel.classList.add('is-editing');
    const actionsRow=node('div',undefined,'edit-comment-actions');
    const cancelBtn=document.createElement('button');cancelBtn.type='button';cancelBtn.textContent='Hủy';
    const saveBtn=node('button','Lưu','primary');saveBtn.type='submit';
-   actionsRow.append(cancelBtn,saveBtn);form.append(ta,actionsRow);bodyWrap.append(form);
+   actionsRow.append(editPicker.btn,editEmoji.btn,editPicker.fileInput,cancelBtn,saveBtn);form.append(ta,editPicker.strip,actionsRow);bodyWrap.append(form);
    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
    cancelBtn.onclick=()=>renderPopupBody();
    form.onsubmit=async ev=>{
     ev.preventDefault();saveBtn.disabled=true;
-    const ok=await saveCommentEdit(record,ta.value);
+    const ok=await saveCommentEdit(record,ta.value,editPicker);
     saveBtn.disabled=false;
     if(ok){render();openFloating(record,record);}else renderPopupBody();
    };
@@ -825,12 +836,12 @@ function finishJump(){
 }
 function render() {
  const all=records.filter(c=>c.page===page); $('count').textContent=all.filter(c=>c.status==='open').length;
- document.querySelectorAll('[data-status]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.status===status)); b.innerHTML=(b.dataset.status==='open'?icon('unresolved'):icon('check'))+`${b.dataset.status==='open'?'Đang sửa':'Đã sửa'} (${all.filter(c=>c.status===b.dataset.status).length})`;});
+ document.querySelectorAll('[data-status]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.status===status)); b.innerHTML=(b.dataset.status==='open'?icon('unresolved'):icon('check'))+`<span class="filter-label">${b.dataset.status==='open'?'Đang sửa':'Đã sửa'} (${all.filter(c=>c.status===b.dataset.status).length})</span>`; b.title=b.textContent;});
  $('comments').replaceChildren();
  all.filter(c=>c.status===status).forEach(c=>{
  const card=node('article',undefined,'card'), top=node('div',undefined,'card-top'), pin=node('button','#'+(records.indexOf(c)+1),'number'); pin.onclick=()=>focusRecord(c);card.dataset.commentId=c.id;card.classList.toggle('selected',selectedId===c.id);card.addEventListener('click',e=>{if(!e.target.closest('button,input,textarea,form'))focusRecord(c);}); if (!c.selector) { pin.textContent='—'; pin.title='Bình luận chung cho trang'; }
  const avatar=node('span',avatarLetter(c.author),'avatar');avatar.style.background=avatarColor(c.author);
- top.append(avatar,node('strong',c.author));
+ top.append(avatar,Object.assign(node('strong',c.author),{title:c.author}));
  const meta=node('div',undefined,'meta meta-row');
  meta.append(pin);
  const deviceLabel=c.device?c.device.charAt(0).toUpperCase()+c.device.slice(1):'';
@@ -841,6 +852,7 @@ function render() {
  card.append(top,meta);
  const bodyWrap=node('div',undefined,'card-body-wrap');
  function renderCardBody(){
+  card.classList.remove('is-editing');
   bodyWrap.replaceChildren();
   if(c.content)bodyWrap.append(node('p',c.content,'body'));
   if(c.attachments&&c.attachments.length)bodyWrap.append(renderAttachmentStrip(c.attachments));
@@ -858,15 +870,17 @@ function render() {
   bodyWrap.replaceChildren();
   const form=node('form',undefined,'edit-comment-form');
   const ta=document.createElement('textarea');ta.value=c.content;ta.maxLength=4000;
+  const editPicker=createAttachPicker($('hint'));editPicker.setExisting(c.attachments);editPicker.attachPasteTo(ta);
+  const editEmoji=createEmojiPicker(()=>ta);card.classList.add('is-editing');
   const actionsRow=node('div',undefined,'edit-comment-actions');
   const cancelBtn=document.createElement('button');cancelBtn.type='button';cancelBtn.textContent='Hủy';
   const saveBtn=node('button','Lưu','primary');saveBtn.type='submit';
-  actionsRow.append(cancelBtn,saveBtn);form.append(ta,actionsRow);bodyWrap.append(form);
+  actionsRow.append(editPicker.btn,editEmoji.btn,editPicker.fileInput,cancelBtn,saveBtn);form.append(ta,editPicker.strip,actionsRow);bodyWrap.append(form);
   ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
   cancelBtn.onclick=e2=>{e2.stopPropagation();renderCardBody();};
   form.onsubmit=async ev=>{
    ev.preventDefault();ev.stopPropagation();saveBtn.disabled=true;
-   const ok=await saveCommentEdit(c,ta.value);
+   const ok=await saveCommentEdit(c,ta.value,editPicker);
    saveBtn.disabled=false;
    if(ok)render();else renderCardBody();
   };
@@ -884,7 +898,7 @@ function render() {
 function commentsEmptyState(all) {
  if (status === 'resolved') return emptyState({ icon: 'check', title: 'Chưa có bình luận đã sửa', text: 'Bình luận được đánh dấu đã sửa sẽ nằm ở đây.' });
  if (all.length) return emptyState({ icon: 'check', title: 'Không còn bình luận cần sửa', text: 'Tất cả bình luận trên trang này đã được sửa.' });
- if (canComment()) return emptyState({ icon: 'comments', title: 'Chưa có bình luận', text: 'Chọn một vị trí trên website để ghim góp ý đầu tiên cho trang này.', action: { label: 'Chọn vị trí trên website', icon: 'pin', onClick: () => $('pin').click() } });
+ if (canComment()) return emptyState({ icon: 'comments', title: 'Chưa có bình luận', text: 'Chọn một vị trí trên website để ghim góp ý đầu tiên cho trang này.', action: { label: 'Chọn vị trí', icon: 'target', onClick: () => $('pin').click() } });
  return emptyState({ icon: 'comments', title: 'Chưa có bình luận', text: 'Đăng nhập bằng email được mời để bình luận trên trang này.' });
 }
 function renderPins() {
@@ -900,7 +914,7 @@ function renderPins() {
  pin.onclick=e=>{e.preventDefault();e.stopPropagation();sidebar(true);focusRecord(c);};doc.body.append(pin);
  }); positionPins();
 }
-function positionPins(){try{const doc=C().doc,win=C().win;doc.querySelectorAll('[data-review-pin], [data-review-draft]').forEach(pin=>{const c=pin.hasAttribute('data-review-draft')?pending:records.find(r=>r.id===pin.dataset.reviewPin);if(!c)return;let el;try{el=doc.querySelector(c.selector);}catch{}let x,y;if(el){const r=el.getBoundingClientRect();if(!r.width&&!r.height){pin.hidden=true;return;}x=r.left+r.width*c.offsetX;y=r.top+r.height*c.offsetY;}else{x=c.x*doc.documentElement.scrollWidth-win.scrollX;y=c.y*doc.documentElement.scrollHeight-win.scrollY;}pin.hidden=x<0||y<0||x>win.innerWidth||y>win.innerHeight;pin.style.left=`${x-14}px`;pin.style.top=`${y-14}px`;});}catch{}}
+function positionPins(){try{const doc=C().doc,win=C().win;doc.querySelectorAll('[data-review-pin], [data-review-draft]').forEach(pin=>{const c=pin.hasAttribute('data-review-draft')?pending:records.find(r=>r.id===pin.dataset.reviewPin);if(!c)return;let el;try{el=doc.querySelector(c.selector);}catch{}let x,y;if(el){const r=el.getBoundingClientRect();if(!r.width&&!r.height){pin.hidden=true;return;}x=r.left+r.width*c.offsetX;y=r.top+r.height*c.offsetY;}else{x=c.x*doc.documentElement.scrollWidth-win.scrollX;y=c.y*doc.documentElement.scrollHeight-win.scrollY;}pin.hidden=x<0||y<0||x>win.innerWidth||y>win.innerHeight;const half=pin.offsetWidth/2||14;pin.style.left=`${x-half}px`;pin.style.top=`${y-half}px`;});}catch{}}
 function installContent(){try{const doc=C().doc;try{const sb=doc.createElement('style');sb.textContent='html{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}';(doc.head||doc.documentElement).appendChild(sb);}catch{}doc.addEventListener('click',select,true);doc.addEventListener('pointermove',hoverPicker,true);doc.addEventListener('pointerleave',hideHover);doc.addEventListener('scroll',hideHover,true);doc.addEventListener('keydown',e=>{if(e.key==='Escape')cancel();});render();}catch(error){reportPreviewError(error);}}
 frame.addEventListener('load',()=>{cancel();if(EMBED){embedReady=false;return;}try{page=getPage();}catch{}installContent();});
 setInterval(()=>{try{const next=getPage();if(next!==page){page=next;cancel();render();}positionPins();positionPicker();positionFloating();}catch{}},80);

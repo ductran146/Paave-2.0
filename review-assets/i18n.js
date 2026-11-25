@@ -5,10 +5,10 @@
  const KEY = 'rs-lang';
  const DICT = {
   'Tổng quan feedback':'Feedback overview','Tổng quan phản hồi':'Feedback overview','Toàn màn hình':'Full screen','Chế độ tối':'Dark mode','Ngôn ngữ':'Language',
-  'Các trang':'Pages','Trang đã bình luận':'Commented pages','Bình luận':'Comments','Đang sửa':'In progress','Đã sửa':'Resolved','Sửa lại':'Reopen',
+  'Các trang':'Pages','Trang đã bình luận':'Commented pages','Bình luận':'Comments','Đang sửa':'Open','Đã sửa':'Resolved','Sửa lại':'Reopen',
   'Email được mời':'Invited email','Gửi mã':'Send code','Mã đăng nhập đã gửi tới':'Sign-in code sent to','Xác nhận':'Confirm','Đổi email':'Change email',
-  'Nội dung bình luận':'Comment','Chọn vị trí trên website':'Pick a spot on the page','Chọn lại vị trí':'Pick a new spot','Bỏ vị trí':'Clear spot','Gửi':'Send',
-  'Hiện các trang':'Show pages','Ẩn các trang':'Hide pages','Hiện bình luận':'Show comments','Lượt truy cập':'Visits','Không tính lượt truy cập trên trình duyệt này':'Don\'t count visits from this browser','Lượt truy cập (chưa chạy supabase/project-visits.sql)':'Visits (run supabase/project-visits.sql first)','Chưa có bình luận':'No comments yet','Chưa có bình luận đã sửa':'No resolved comments','Bình luận được đánh dấu đã sửa sẽ nằm ở đây.':'Comments marked as resolved will appear here.','Không còn bình luận cần sửa':'All caught up','Tất cả bình luận trên trang này đã được sửa.':'Every comment on this page has been resolved.','Chọn một vị trí trên website để ghim góp ý đầu tiên cho trang này.':'Pick a spot on the website to pin the first comment for this page.','Đăng nhập bằng email được mời để bình luận trên trang này.':'Sign in with your invited email to comment on this page.','Xem 100% (Shift+0)':'View at 100% (Shift+0)','Vừa khung (Shift+1)':'Fit to frame (Shift+1)','Số bình luận đang sửa':'Open comments','Kéo để đổi độ rộng · Nhấp đúp để về mặc định':'Drag to resize · Double-click to reset','Ẩn bình luận':'Hide comments','Kích thước preview':'Preview size',
+  'Nội dung bình luận':'Comment','Chọn vị trí':'Pick a spot','Chọn lại vị trí':'Pick a new spot','Bỏ vị trí':'Clear spot','Gửi':'Send',
+  'Hiện các trang':'Show pages','Ẩn các trang':'Hide pages','Hiện bình luận':'Show comments','Đã đăng nhập':'Signed in as','Lượt truy cập':'Visits','Không tính lượt truy cập trên trình duyệt này':'Don\'t count visits from this browser','Lượt truy cập (chưa chạy supabase/project-visits.sql)':'Visits (run supabase/project-visits.sql first)','Chưa có bình luận':'No comments yet','Chưa có bình luận đã sửa':'No resolved comments','Bình luận được đánh dấu đã sửa sẽ nằm ở đây.':'Comments marked as resolved will appear here.','Không còn bình luận cần sửa':'All caught up','Tất cả bình luận trên trang này đã được sửa.':'Every comment on this page has been resolved.','Chọn một vị trí trên website để ghim góp ý đầu tiên cho trang này.':'Pick a spot on the website to pin the first comment for this page.','Đăng nhập bằng email được mời để bình luận trên trang này.':'Sign in with your invited email to comment on this page.','Xem 100% (Shift+0)':'View at 100% (Shift+0)','Vừa khung (Shift+1)':'Fit to frame (Shift+1)','Số bình luận đang sửa':'Open comments','Kéo để đổi độ rộng · Nhấp đúp để về mặc định':'Drag to resize · Double-click to reset','Ẩn bình luận':'Hide comments','Kích thước preview':'Preview size',
   'Website đang review':'Website under review','Thu gọn danh sách trang':'Collapse page list','Thu gọn bình luận':'Collapse comments','Danh sách bình luận':'Comment list',
   'Hủy trả lời':'Cancel reply','Viết bình luận cho trang này…':'Write a comment for this page…','Viết trả lời…':'Write a reply…','Trả lời…':'Reply…',
   'Website':'Website','Xem website':'View website','KHÔNG GIAN OWNER':'OWNER WORKSPACE','Những trang cần bạn xem và xử lý góp ý.':'Pages that need your review and feedback handling.',
@@ -25,7 +25,7 @@
   'Chế độ xem thử — chưa nối Supabase nên không lưu được trạng thái thật.':'Preview mode — Supabase is not connected, so the status was not saved.',
   'Chế độ xem thử — chưa nối Supabase nên không lưu được.':'Preview mode — Supabase is not connected, so nothing is saved.',
   'Email này chưa được cấp quyền bình luận cho dự án này. Liên hệ chủ dự án.':'This email has no permission to comment on this project. Contact the project owner.',
-  'Đang gửi mã…':'Sending code…','Đang xác nhận…':'Verifying…','Đang tải ảnh lên…':'Uploading images…','Đang thêm…':'Adding…','Đang chọn vị trí…':'Picking a spot…',
+  'Đang gửi mã…':'Sending code…','Đang xác nhận…':'Verifying…','Đang tải ảnh lên…':'Uploading images…','Đang thêm…':'Adding…','Đang chọn vị trí…':'Picking a spot…','Hủy chọn':'Cancel','Bỏ vị trí':'Clear spot',
   'Bấm vào phần tử muốn góp ý. Nhấn Esc để hủy.':'Click the element you want to comment on. Press Esc to cancel.',
   'Đã gửi bình luận. Bấm bình luận trong danh sách để xem lại vị trí.':'Comment sent. Click a comment in the list to see its location again.',
   'Bình luận chung cho trang':'General comment for this page','Bình luận tại đây':'Comment here','Bình luận tại vị trí đã chọn':'Comment at the selected spot','Chi tiết bình luận':'Comment details',
@@ -33,7 +33,7 @@
   'Trả lời bình luận':'Reply to comment','Nội dung tại vị trí':'Comment at this spot','Viết góp ý tại vị trí này…':'Write feedback for this spot…',
   'Enter để gửi · Shift + Enter xuống dòng':'Enter to send · Shift + Enter for new line','Nhập nội dung hoặc đính kèm ảnh.':'Enter text or attach an image.',
   'Chưa gửi được. Kiểm tra nội dung và thử lại.':'Could not send. Check the content and try again.',
-  'Chưa có bình luận đang sửa.':'No comments in progress.','Chưa có bình luận đã sửa.':'No resolved comments.',
+  'Chưa có bình luận đang sửa.':'No open comments.','Chưa có bình luận đã sửa.':'No resolved comments.',
   'Đính kèm ảnh':'Attach image','Bỏ ảnh này':'Remove this image','Chèn emoji':'Insert emoji','vừa xong':'just now',
   'Bấm trên website để đặt bình luận':'Click on the website to place a comment',
   'Website chưa tải xong. Chờ trang hiển thị rồi chọn vị trí lại.':'The website has not finished loading. Wait for it, then pick a spot again.',
@@ -43,10 +43,10 @@
  };
  const RULES = [
   [/^(\d+) phút trước$/, (m) => m[1] + ' min ago'], [/^(\d+) giờ trước$/, (m) => m[1] + ' h ago'], [/^(\d+) ngày trước$/, (m) => m[1] + ' d ago'],
-  [/^(\d+) trang(?: HTML)? · (\d+) bình luận đang sửa$/, (m) => m[1] + ' pages · ' + m[2] + ' comments in progress'],
-  [/^(\d+) trang HTML để review$/, (m) => m[1] + ' HTML pages to review'], [/^(\d+) trang HTML · (\d+) bình luận đang sửa$/, (m) => m[1] + ' HTML pages · ' + m[2] + ' comments in progress'],
-  [/^(\d+) đang sửa · (\d+) đã sửa$/, (m) => m[1] + ' in progress · ' + m[2] + ' resolved'],
-  [/^Đang sửa \((\d+)\)$/, (m) => 'In progress (' + m[1] + ')'], [/^Đã sửa \((\d+)\)$/, (m) => 'Resolved (' + m[1] + ')'],
+  [/^(\d+) trang(?: HTML)? · (\d+) bình luận đang sửa$/, (m) => m[1] + ' pages · ' + m[2] + ' open comments'],
+  [/^(\d+) trang HTML để review$/, (m) => m[1] + ' HTML pages to review'], [/^(\d+) trang HTML · (\d+) bình luận đang sửa$/, (m) => m[1] + ' HTML pages · ' + m[2] + ' open comments'],
+  [/^(\d+) đang sửa · (\d+) đã sửa$/, (m) => m[1] + ' open · ' + m[2] + ' resolved'],
+  [/^Đang sửa \((\d+)\)$/, (m) => 'Open (' + m[1] + ')'], [/^Đã sửa \((\d+)\)$/, (m) => 'Done (' + m[1] + ')'], // nhãn nút lọc ngắn cho vừa panel 256px (mục 189); chỗ khác vẫn 'Resolved'
   [/^Ngoại lệ \((\d+)\)$/, (m) => 'Exceptions (' + m[1] + ')'],
   [/^Vị trí: (.*)$/s, (m) => 'Spot: ' + m[1]], [/^Trả lời (.+)$/s, (m) => 'Reply to ' + m[1]],
   [/^Tối đa (\d+) ảnh mỗi bình luận\.$/, (m) => 'Up to ' + m[1] + ' images per comment.'],

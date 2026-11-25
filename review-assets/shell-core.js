@@ -159,15 +159,43 @@ async function requireAuth(minRole) {
 // this keeps links correct regardless of which screen is calling it.
 function rootPath(file) { return (location.pathname.includes('/owner/') ? '../' : '') + file; }
 
+// Tài khoản trên header (mục 194): avatar tròn 36px, bấm mở menu "Đã đăng nhập" + email + hành động.
+// actions: [{ label, icon, onClick }]
+function accountMenu(email, actions = []) {
+ const wrap = node('div', undefined, 'account');
+ const btn = node('button', avatarLetter(email), 'account-avatar'); btn.type = 'button';
+ btn.style.background = avatarColor(email); btn.title = email;
+ btn.setAttribute('aria-label', 'Tài khoản: ' + email); btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+ const menu = node('div', undefined, 'account-menu'); menu.hidden = true; menu.setAttribute('role', 'menu');
+ const head = node('div', undefined, 'account-menu-head');
+ const em = node('strong', email, 'account-menu-email'); em.title = email;
+ head.append(node('span', 'Đã đăng nhập', 'account-menu-label'), em); menu.append(head);
+ const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', onKey, true); window.removeEventListener('blur', close); };
+ const outside = e => { if (!wrap.contains(e.target)) close(); };
+ const onKey = e => { if (e.key === 'Escape') { close(); btn.focus(); } };
+ for (const a of actions) {
+  const it = node('button', undefined, 'account-menu-item'); it.type = 'button'; it.setAttribute('role', 'menuitem');
+  if (a.icon) it.append(iconEl(a.icon));
+  it.append(document.createTextNode(a.label)); it.onclick = () => { close(); a.onClick(); }; menu.append(it);
+ }
+ btn.onclick = () => {
+  if (!menu.hidden) { close(); return; }
+  menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+  document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', onKey, true);
+  // Bấm vào iframe preview không phát pointerdown ở trang ngoài → dùng blur của cửa sổ (iframe nhận focus) để đóng menu (mục 195).
+  window.addEventListener('blur', close);
+ };
+ wrap.append(btn, menu);
+ return wrap;
+}
+
 function renderIdentity(identity) {
  const box = $('identityBox'); if (!box) return;
  box.hidden = false;
- box.textContent = '';
- box.append(node('span', identity.email + (identity.preview ? ' (xem thử)' : ''), 'identity-email'));
- const out = document.createElement('button'); out.className = 'identity-signout'; out.append(iconEl('logout'), document.createTextNode('Đăng xuất'));
- out.type = 'button';
- out.onclick = async () => { if (SUPABASE_READY && !identity.preview) await sb.auth.signOut(); location.href = rootPath('index.html'); };
- box.append(out);
+ box.replaceChildren(accountMenu(identity.email + (identity.preview ? ' (xem thử)' : ''), [{
+  label: 'Đăng xuất', icon: 'logout',
+  onClick: async () => { if (SUPABASE_READY && !identity.preview) await sb.auth.signOut(); location.href = rootPath('index.html'); },
+ }]));
 }
 
 // Empty state dùng chung (mục 161): icon trong vòng tròn nhạt + tiêu đề + mô tả + nút hành động tuỳ chọn.
