@@ -250,28 +250,39 @@ function viewport() {
   // hidden via CSS) -- the frame fills #stage exactly with no gap/shadow/
   // radius so it reads as the real site's own mobile view, not a "preview
   // inside a tool".
-  stage.classList.remove('scroll-x'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = '';
+  stage.classList.remove('scroll-x','scroll-y'); document.body.classList.remove('rs-zoom-100','rs-fullwidth','rs-immersive','rs-header-peek'); stage.style.paddingLeft = stage.style.paddingRight = ''; stage.scrollLeft = 0; stage.scrollTop = 0;
   width = stage.clientWidth;
   height = stage.clientHeight;
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)`;
  } else if (widthMode === 'fullwidth' || EMBED) {
-  stage.classList.remove('scroll-x'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = '';
+  stage.classList.remove('scroll-x','scroll-y'); document.body.classList.remove('rs-zoom-100'); stage.style.paddingLeft = stage.style.paddingRight = ''; stage.scrollLeft = 0; stage.scrollTop = 0;
+  // Mục 214: Toàn màn hình (không embed) → khung luôn rộng hết cửa sổ, panel mở thì NẰM ĐÈ lên (main không chừa chỗ), không co khung lại.
+  document.body.classList.toggle('rs-fullwidth', widthMode === 'fullwidth' && !EMBED);
+  // Mục 215: Toàn màn hình + 2 panel đóng → xem như web thật (ẩn header/panel, header tự hiện khi đưa chuột lên mép trên).
+  const immersive = widthMode === 'fullwidth' && !EMBED && $('pagesPanel').hidden && $('sidebar').hidden;
+  document.body.classList.toggle('rs-immersive', immersive);
+  if (!immersive) document.body.classList.remove('rs-header-peek');
   // Embed: khung lấp đầy stage (không chừa 8px) và dùng đúng màu nền của prototype → 1 vùng liền, không lộ dải nền RS.
-  width = Math.max(320, stage.clientWidth - (EMBED ? 0 : 8));
-  height = Math.max(320, stage.clientHeight - (EMBED ? 0 : 8));
+  width = Math.max(320, stage.clientWidth - (EMBED || immersive ? 0 : 8));
+  height = Math.max(320, stage.clientHeight - (EMBED || immersive ? 0 : 8));
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(1)` + (EMBED && embedBg ? `;background:${embedBg}` : '');
  } else {
   // Zoom (mục 155): 'fit' = co vừa khoảng giữa 2 panel; '100' = đúng kích thước thật, #stage cuộn ngang nếu khung rộng hơn.
   // 100% kiểu Figma (mục 156): main bỏ phần chừa chỗ cho panel → preview trải hết bề ngang, nằm SAU 2 panel; #stage chừa padding
   // = độ rộng panel đang mở để cuộn ngang kéo được cả phần bị panel che ra giữa.
   const zoom100 = zoomMode === '100';
+  document.body.classList.remove('rs-fullwidth','rs-immersive','rs-header-peek');
   document.body.classList.toggle('rs-zoom-100', zoom100);
   let insetL = 0, insetR = 0;
   if (zoom100) { if (!$('pagesPanel').hidden) insetL = Math.round($('pagesPanel').getBoundingClientRect().width); if (!$('sidebar').hidden) insetR = Math.round($('sidebar').getBoundingClientRect().width); }
   stage.style.paddingLeft = zoom100 ? insetL + 'px' : ''; stage.style.paddingRight = zoom100 ? insetR + 'px' : '';
   const overflowX = zoom100 && insetL + width + insetR + 8 > stage.clientWidth;
   stage.classList.toggle('scroll-x', overflowX);
-  const scale = zoom100 ? 1 : Math.min(1, (stage.clientWidth - 8) / width);
+  // Mục 206: Mobile/Tablet có chiều cao cố định (844/1024) → 'vừa khung' co theo CẢ chiều cao để thấy trọn khung thiết bị;
+  // ở 100% thì #stage cuộn dọc khi khung cao hơn. Desktop cao bằng stage nên chỉ co theo chiều ngang.
+  const fitH = widthMode === 1440 ? 1 : (stage.clientHeight - 8) / height;
+  const scale = zoom100 ? 1 : Math.min(1, (stage.clientWidth - 8) / width, fitH);
+  stage.classList.toggle('scroll-y', zoom100 && widthMode !== 1440 && height + 8 > stage.clientHeight);
   shownScale = scale;
   if (widthMode === 1440) {
    // Desktop fills the stage's full height. NOTE: transform:scale() is
@@ -283,6 +294,9 @@ function viewport() {
   }
   $('frameBox').style.cssText = `width:${width}px;height:${height}px;transform:scale(${scale})`;
   // Lần đầu vào 100% (hoặc đổi thiết bị) → cuộn để khung căn giữa cửa sổ, 2 bên khuất đều sau panel như Figma.
+  // Mục 208: overflow:hidden vẫn giữ scrollLeft/scrollTop cũ → về 'Vừa khung' bị lệch; không cần cuộn thì đưa về 0.
+  if (!overflowX) stage.scrollLeft = 0;
+  if (!stage.classList.contains('scroll-y')) stage.scrollTop = 0;
   const key = overflowX ? widthMode + '|' + zoomMode : '';
   if (key && key !== zoomCenterKey) stage.scrollLeft = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
   zoomCenterKey = key;
@@ -293,17 +307,84 @@ function viewport() {
 // Nút zoom trên header (mục 155): hiện % đang xem; bấm chuyển Vừa khung ↔ 100%. Shift+1 = vừa khung, Shift+0 = 100%.
 let zoomMode = 'fit', shownScale = 1, zoomCenterKey = '';
 try { if (localStorage.getItem('rs-zoom') === '100') zoomMode = '100'; } catch {}
-function setZoom(mode) { zoomMode = mode; try { localStorage.setItem('rs-zoom', mode); } catch {} viewport(); try { positionFloating(); } catch {} }
+function setZoom(mode) { try { closeZoomMenu(); } catch {} zoomMode = mode; try { localStorage.setItem('rs-zoom', mode); } catch {} viewport(); try { positionFloating(); } catch {} }
 function updateZoomButton() {
  const b = $('zoomToggle'); if (!b) return;
  b.hidden = isMobileChromeless() || widthMode === 'fullwidth' || EMBED;
  const zoom100 = zoomMode === '100';
  b.querySelector('.zoom-label').textContent = Math.round((zoom100 ? 1 : shownScale) * 100) + '%';
- b.setAttribute('aria-pressed', String(zoom100));
- const tip = zoom100 ? 'Vừa khung (Shift+1)' : 'Xem 100% (Shift+0)';
- b.dataset.tooltip = tip; b.setAttribute('aria-label', tip);
+ b.removeAttribute('aria-pressed'); // mục 211: nút tỷ lệ luôn màu thường (không kiểu 'đang chọn' xanh)
+ b.removeAttribute('data-tooltip'); b.setAttribute('aria-label', 'Thu phóng: ' + (zoom100 ? 'Kích thước thật (100%)' : 'Vừa khung'));
 }
-if ($('zoomToggle')) $('zoomToggle').onclick = () => setZoom(zoomMode === '100' ? 'fit' : '100');
+// Menu zoom kiểu Figma (mục 207): bấm nút "% ▾" → chọn Vừa khung (⇧1) / Kích thước thật 100% (⇧0).
+let zoomMenu = null;
+function closeZoomMenu() {
+ if (!zoomMenu) return;
+ zoomMenu.remove(); zoomMenu = null;
+ const b = $('zoomToggle'); if (b) b.setAttribute('aria-expanded', 'false');
+ document.removeEventListener('pointerdown', zoomMenuOutside, true); document.removeEventListener('keydown', zoomMenuKey, true); window.removeEventListener('blur', closeZoomMenu);
+}
+function zoomMenuOutside(e) { if (zoomMenu && !zoomMenu.contains(e.target) && !$('zoomToggle').contains(e.target)) closeZoomMenu(); }
+function zoomMenuKey(e) { if (e.key === 'Escape') { closeZoomMenu(); $('zoomToggle').focus(); } }
+function openZoomMenu() {
+ const btn = $('zoomToggle');
+ zoomMenu = node('div', undefined, 'account-menu zoom-menu'); zoomMenu.setAttribute('role', 'menu');
+ [{ mode: 'fit', icon: 'expand', label: 'Vừa khung', key: '⇧1' }, { mode: '100', icon: 'ratio', label: 'Kích thước thật (100%)', key: '⇧0' }].forEach(o => {
+  const it = node('button', undefined, 'account-menu-item zoom-menu-item'); it.type = 'button'; it.setAttribute('role', 'menuitemradio');
+  const on = zoomMode === o.mode; it.setAttribute('aria-checked', String(on));
+  const check = node('span', undefined, 'zoom-check'); if (on) check.append(iconEl('tick'));
+  it.append(check, iconEl(o.icon), node('span', o.label, 'zoom-menu-label'), node('kbd', o.key, 'zoom-menu-key'));
+  it.onclick = () => { closeZoomMenu(); setZoom(o.mode); };
+  zoomMenu.append(it);
+ });
+ document.body.append(zoomMenu);
+ const r = btn.getBoundingClientRect();
+ zoomMenu.style.top = (r.bottom + 8) + 'px';
+ zoomMenu.style.left = Math.max(8, Math.min(r.left, innerWidth - zoomMenu.offsetWidth - 8)) + 'px';
+ btn.setAttribute('aria-expanded', 'true');
+ document.addEventListener('pointerdown', zoomMenuOutside, true); document.addEventListener('keydown', zoomMenuKey, true); window.addEventListener('blur', closeZoomMenu);
+ zoomMenu.querySelector('[aria-checked="true"]')?.focus();
+}
+// ---- Toàn màn hình kiểu xem web thật (mục 215) ----
+let fullwidthPrevWidth = 1440;
+function exitFullwidth() {
+ const prev = document.querySelector('[data-width="' + fullwidthPrevWidth + '"]');
+ const target = prev && !prev.hidden ? prev : document.querySelector('[data-width]:not([hidden]):not([data-width="fullwidth"])');
+ if (target) target.click();
+}
+function showToast(text, ms = 3000) {
+ let t = document.querySelector('.rs-toast');
+ if (!t) { t = node('div', undefined, 'rs-toast'); t.setAttribute('role', 'status'); document.body.append(t); }
+ t.textContent = text; t.classList.add('show');
+ clearTimeout(showToast._t); showToast._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+const headerHotzone = node('div', undefined, 'header-hotzone'); headerHotzone.id = 'headerHotzone'; document.body.append(headerHotzone);
+let headerPeekTimer = 0;
+function headerPeek() { clearTimeout(headerPeekTimer); document.body.classList.add('rs-header-peek'); }
+function headerUnpeekSoon(ms = 500) {
+ clearTimeout(headerPeekTimer);
+ headerPeekTimer = setTimeout(() => {
+  const hdr = document.querySelector('header');
+  if ((hdr && hdr.matches(':hover')) || document.querySelector('.account-menu:not([hidden])')) { headerUnpeekSoon(ms); return; }
+  document.body.classList.remove('rs-header-peek');
+ }, ms);
+}
+headerHotzone.addEventListener('mouseenter', headerPeek);
+(() => { const hdr = document.querySelector('header'); if (!hdr) return;
+ hdr.addEventListener('mouseenter', () => { if (document.body.classList.contains('rs-immersive')) headerPeek(); });
+ hdr.addEventListener('mouseleave', () => { if (document.body.classList.contains('rs-immersive')) headerUnpeekSoon(); });
+})();
+function enterImmersiveHint() {
+ if (!document.body.classList.contains('rs-immersive')) return;
+ headerPeek(); headerUnpeekSoon(1500);
+ showToast('Đưa chuột lên mép trên để hiện thanh công cụ · Esc để thoát');
+}
+if ($('zoomToggle')) {
+ const zb = $('zoomToggle');
+ zb.setAttribute('aria-haspopup', 'menu'); zb.setAttribute('aria-expanded', 'false');
+ zb.append(iconEl('chevronDown'));
+ zb.onclick = () => { if (zoomMenu) closeZoomMenu(); else openZoomMenu(); };
+}
 window.addEventListener('keydown', e => {
  if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
  if (e.code !== 'Digit0' && e.code !== 'Digit1') return;
@@ -325,7 +406,7 @@ function syncReopenButtons() {
  sidebarReopenBtn.hidden = !$('sidebar').hidden;
 }
 // Kéo mép panel để đổi độ rộng; double-click mép → về mặc định 256px (mục 153). Độ rộng nhớ theo từng người xem (localStorage).
-const PANEL_W_DEFAULT = 256, PANEL_W_MIN = 256, PANEL_W_MAX = 560; // không cho hẹp hơn mặc định (mục 156)
+const PANEL_W_DEFAULT = 280, PANEL_W_MIN = 280, PANEL_W_MAX = 560; // mục 202: 256 → 280 // không cho hẹp hơn mặc định (mục 156)
 function setPanelWidth(cssVar, key, w) {
  const root = document.documentElement;
  if (w == null) { root.style.removeProperty(cssVar); try { localStorage.removeItem(key); } catch {} }
@@ -386,7 +467,9 @@ document.querySelectorAll('[data-width]').forEach(b => b.onclick = () => {
   fullwidthRestoreSidebar = !$('sidebar').hidden;
   fullwidthRestorePages = !$('pagesPanel').hidden;
   sidebar(false); pagesPanelOpen(false);
+  fullwidthPrevWidth = widthMode;
   widthMode = 'fullwidth';
+  setTimeout(enterImmersiveHint, 0);
  } else {
   if (widthMode === 'fullwidth') {
    if (fullwidthRestoreSidebar) sidebar(true);
@@ -614,7 +697,7 @@ $('cancel').onclick = () => { cancel(); sidebar(true); };
 // Mục 193: 1 nút duy nhất — đang chọn / đã chọn vị trí thì nút thành "Hủy chọn"/"Bỏ vị trí" (icon X), bấm để hủy; Esc vẫn hủy.
 function setPinButton(mode) { const lbl = { idle: 'Chọn vị trí', picking: 'Hủy chọn', pending: 'Bỏ vị trí' }[mode] || 'Chọn vị trí'; $('pinLabel').textContent = lbl; const ic = $('pin').querySelector('.icon'); if (ic) ic.innerHTML = ICONS[mode === 'idle' ? 'target' : 'closeX'] || ''; $('pin').classList.toggle('is-cancel', mode !== 'idle'); }
 $('pin').onclick = () => { if (picking || pending) { cancel(); sidebar(true); return; } if (!canComment()) return; cancel(); selectedId=null; sidebar(true); try { C().doc.documentElement.style.cursor = 'crosshair'; picking = true; $('cancel').hidden=false; startPicker(); setPinButton('picking'); $('hint').textContent = 'Bấm vào phần tử muốn góp ý. Nhấn Esc để hủy chọn vị trí.'; } catch (error) { picking=false; clearPicker(); setPinButton('idle'); reportPreviewError(error); } };
-window.addEventListener('keydown', e => { if (e.key === 'Escape') { cancel(); sidebar(true); } });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.body.classList.contains('rs-immersive') && !picking && !pending) { exitFullwidth(); return; } cancel(); sidebar(true); } });
 document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { status = b.dataset.status; render(); });
 function selectorFor(el) { if (el.id) return '#' + CSS.escape(el.id); const parts = []; while (el && el.tagName !== 'HTML') { const tag = el.tagName.toLowerCase(); const siblings = [...el.parentElement.children].filter(x => x.tagName === el.tagName); parts.unshift(`${tag}:nth-of-type(${siblings.indexOf(el)+1})`); el = el.parentElement; } return parts.join(' > '); }
 function getPage() { if (EMBED) return page; const url = new URL(frame.contentWindow.location.href); const root = new URL('project/', location.href).pathname; return url.pathname.startsWith(root) ? '/' + url.pathname.slice(root.length) + (config.queryScope ? url.search : '') : url.pathname; }
@@ -836,7 +919,7 @@ function finishJump(){
 }
 function render() {
  const all=records.filter(c=>c.page===page); $('count').textContent=all.filter(c=>c.status==='open').length;
- document.querySelectorAll('[data-status]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.status===status)); b.innerHTML=(b.dataset.status==='open'?icon('unresolved'):icon('check'))+`<span class="filter-label">${b.dataset.status==='open'?'Đang sửa':'Đã sửa'} (${all.filter(c=>c.status===b.dataset.status).length})</span>`; b.title=b.textContent;});
+ document.querySelectorAll('[data-status]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.status===status)); const lbl=b.dataset.status==='open'?'Đang sửa':'Đã sửa', n=all.filter(c=>c.status===b.dataset.status).length; b.innerHTML=icon(b.dataset.status==='open'?'unresolved':'check')+`<span class="filter-label">${lbl} (${n})</span>`; b.title=lbl+' ('+n+')'; /* mục 203: về lại nút viền (mục 173) */});
  $('comments').replaceChildren();
  all.filter(c=>c.status===status).forEach(c=>{
  const card=node('article',undefined,'card'), top=node('div',undefined,'card-top'), pin=node('button','#'+(records.indexOf(c)+1),'number'); pin.onclick=()=>focusRecord(c);card.dataset.commentId=c.id;card.classList.toggle('selected',selectedId===c.id);card.addEventListener('click',e=>{if(!e.target.closest('button,input,textarea,form'))focusRecord(c);}); if (!c.selector) { pin.textContent='—'; pin.title='Bình luận chung cho trang'; }

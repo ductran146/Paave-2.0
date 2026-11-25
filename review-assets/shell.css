@@ -1,8 +1,8 @@
-:root{font-family:Inter,system-ui,sans-serif;color:#202637;background:#eef0f5;font-size:16px}*{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #dce0e9;background:white;color:inherit;height:36px;padding:0 14px;border-radius:8px;font-size:13px}button:hover{background:#edf1ff}button:focus-visible{outline:3px solid #8d9fff;outline-offset:2px}input:focus-visible,textarea:focus-visible{outline:none;border-color:#3155df!important}header{position:relative;height:76px;display:flex;align-items:center;gap:24px;padding:0 24px;background:#fff;border-bottom:1px solid #dce0e9}.brand{font-size:32px;font-weight:800;color:#3155df;text-decoration:none;display:flex;gap:10px;align-items:center}.brand-logo{width:32px;height:37px;display:block;object-fit:contain}.brand-title{font-size:19px;font-weight:600;color:#202637}.version{font-size:12px;color:#687186}.devices{display:flex;gap:4px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}.devices button[aria-pressed=true],.filters button[aria-pressed=true]{background:#e9eeff;color:#294fd5;border-color:#c5d0ff}main{padding:20px 24px}#stage{height:calc(100vh - 135px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start}#frameBox{position:relative;transform-origin:top center;box-shadow:0 12px 40px #20263712;background:white;flex-shrink:0;border-radius:14px;overflow:hidden}iframe{border:0;display:block;width:100%;height:100%}aside{position:fixed;right:16px;top:92px;bottom:16px;width:340px;background:white;box-shadow:0 12px 48px #19264c22;border:1px solid #dce0e9;border-radius:14px;padding:20px;overflow:auto;z-index:10;font-size:13px}aside[hidden]{display:none}.panel-head{display:flex;align-items:center;justify-content:space-between}h1{font-size:20px;margin:0}.panel-head h1{font-size:16px}.panel-head button{height:36px;border:0;font-size:24px;padding:0 7px}.notice{background:#f3f5fa;padding:12px;font-size:13px;line-height:1.5;color:#606a80;border-radius:8px}.name-label{display:block;font-size:13px}input,textarea{width:100%;border:1px solid #dce0e9;border-radius:8px;padding:10px;margin:8px 0 12px;font-size:13px}input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select{height:36px;padding-top:0;padding-bottom:0}textarea{min-height:90px;resize:vertical}.primary{background:#3155df;color:#fff;border-color:#3155df}.primary:hover{background:#2344be}#pin{width:100%;margin-top:4px}#hint{font-size:13px;color:#687186;line-height:1.5}.filters{display:flex;gap:8px;padding:12px 0;border-bottom:1px solid #edf0f5}.card{padding:18px 0;border-bottom:1px solid #edf0f5}.card-top{display:flex;gap:10px;align-items:center}.card-top .avatar{width:24px;height:24px;font-size:11px}.number{background:none;color:#9aa1b1;border:0;border-radius:0;width:auto;height:auto;padding:0;font-size:12px;font-weight:600;margin-right:6px}.meta{font-size:12px;color:#71798a;margin-top:6px}.device-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#eef0f5;color:#55617a;font-size:11px;font-weight:600;margin-right:6px}.body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:13px}.reply{margin:12px 0 0 14px;border-left:2px solid #e1e6f2;padding-left:10px;font-size:13px}.reply p{white-space:pre-wrap;overflow-wrap:anywhere}.empty{padding:40px 10px;text-align:center;color:#71798a;font-size:13px;line-height:1.7}footer{font-size:12px;color:#71798a;padding-top:20px}#composer{padding-top:16px}#composer>div{display:flex;justify-content:flex-end;gap:8px}@media(max-width:800px){header{padding:12px;gap:10px;flex-wrap:wrap;height:auto;min-height:110px}.version,.brand-title{display:none}.devices{position:static;transform:none;margin-left:0}.devices button{padding:0 8px}main{padding:12px}aside{top:auto;bottom:8px;right:8px;width:calc(100% - 16px);max-height:48vh}#stage{height:calc(100vh - 165px)}}
+:root{font-family:Inter,system-ui,sans-serif;color:#202637;background:#eef0f5;font-size:15px}*{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #dce0e9;background:white;color:inherit;height:36px;padding:0 14px;border-radius:8px;font-size:13px}button:hover{background:#edf1ff}button:focus-visible{outline:3px solid #8d9fff;outline-offset:2px}input:focus-visible,textarea:focus-visible{outline:none;border-color:#3155df!important}header{position:relative;height:76px;display:flex;align-items:center;gap:24px;padding:0 24px;background:#fff;border-bottom:1px solid #dce0e9}.brand{font-size:32px;font-weight:800;color:#3155df;text-decoration:none;display:flex;gap:10px;align-items:center}.brand-logo{width:32px;height:37px;display:block;object-fit:contain}.brand-title{font-size:19px;font-weight:600;color:#202637}.version{font-size:12px;color:#687186}.devices{display:flex;gap:4px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}.devices button[aria-pressed=true],.filters button[aria-pressed=true]{background:#e9eeff;color:#294fd5;border-color:#c5d0ff}main{padding:20px 24px}#stage{height:calc(100vh - 135px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start}#frameBox{position:relative;transform-origin:top center;box-shadow:0 12px 40px #20263712;background:white;flex-shrink:0;border-radius:14px;overflow:hidden}iframe{border:0;display:block;width:100%;height:100%}aside{position:fixed;right:16px;top:92px;bottom:16px;width:340px;background:white;box-shadow:0 12px 48px #19264c22;border:1px solid #dce0e9;border-radius:14px;padding:20px;overflow:auto;z-index:10;font-size:13px}aside[hidden]{display:none}.panel-head{display:flex;align-items:center;justify-content:space-between}h1{font-size:20px;margin:0}.panel-head h1{font-size:15px}.panel-head button{height:36px;border:0;font-size:24px;padding:0 7px}.notice{background:#f3f5fa;padding:12px;font-size:13px;line-height:1.5;color:#606a80;border-radius:8px}.name-label{display:block;font-size:13px}input,textarea{width:100%;border:1px solid #dce0e9;border-radius:8px;padding:10px;margin:8px 0 12px;font-size:13px}input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),select{height:36px;padding-top:0;padding-bottom:0}textarea{min-height:90px;resize:vertical}.primary{background:#3155df;color:#fff;border-color:#3155df}.primary:hover{background:#2344be}#pin{width:100%;margin-top:4px}#hint{font-size:13px;color:#687186;line-height:1.5}.filters{display:flex;gap:8px;padding:12px 0;border-bottom:1px solid #edf0f5}.card{padding:18px 0;border-bottom:1px solid #edf0f5}.card-top{display:flex;gap:10px;align-items:center}.card-top .avatar{width:24px;height:24px;font-size:11px}.number{background:none;color:#9aa1b1;border:0;border-radius:0;width:auto;height:auto;padding:0;font-size:12px;font-weight:600;margin-right:6px}.meta{font-size:12px;color:#71798a;margin-top:6px}.device-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;background:#eef0f5;color:#55617a;font-size:11px;font-weight:600;margin-right:6px}.body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:13px}.reply{margin:12px 0 0 14px;border-left:2px solid #e1e6f2;padding-left:10px;font-size:13px}.reply p{white-space:pre-wrap;overflow-wrap:anywhere}.empty{padding:40px 10px;text-align:center;color:#71798a;font-size:13px;line-height:1.7}footer{font-size:12px;color:#71798a;padding-top:20px}#composer{padding-top:16px}#composer>div{display:flex;justify-content:flex-end;gap:8px}@media(max-width:800px){header{padding:12px;gap:10px;flex-wrap:wrap;height:auto;min-height:110px}.version,.brand-title{display:none}.devices{position:static;transform:none;margin-left:0}.devices button{padding:0 8px}main{padding:12px}aside{top:auto;bottom:8px;right:8px;width:calc(100% - 16px);max-height:48vh}#stage{height:calc(100vh - 165px)}}
 
 [hidden]{display:none!important}#emailForm .primary,#otpForm .primary{width:100%}#emailHint,#otpHint,.location-help{font-size:13px;line-height:1.5;color:#687186}#otpForm{margin-top:12px}#otpForm input{letter-spacing:4px;font-size:18px;text-align:center}#otpForm #otpBack{height:36px;width:100%;border:0;background:none;color:#687186;padding:0;margin-top:-4px}#identity{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}#signedEmail{overflow-wrap:anywhere;min-width:0}#identity button{white-space:nowrap}#selection{font-size:13px;background:#edf1ff;padding:10px;border-radius:8px;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:not-allowed}#composer #pin{margin:0;text-align:left}#composer>div{margin-top:12px}
 
-.pick-surface{position:fixed;z-index:5;cursor:crosshair;touch-action:none;background:transparent}.note-popup{position:fixed;z-index:40;background:white;border:1px solid #dce0e9;border-radius:12px;padding:12px 16px 16px;box-shadow:0 12px 40px #182a4e40;font-size:13px;max-height:calc(100vh - 24px);overflow:auto}.note-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #edf0f5;padding-bottom:12px;margin-bottom:14px}.note-head button{height:36px;border:0}.note-popup textarea{font-size:16px;min-height:40px;margin-bottom:0}.note-help{font-size:12px;color:#687186}.note-popup .primary{width:100%}.note-error{color:#b42b2b}.card{cursor:pointer;border-radius:8px;padding:18px 8px}.card.selected{background:#eef2ff}.note-popup .body{font-size:16px}.note-popup small{overflow-wrap:anywhere}
+.pick-surface{position:fixed;z-index:5;cursor:crosshair;touch-action:none;background:transparent}.note-popup{position:fixed;z-index:40;background:white;border:1px solid #dce0e9;border-radius:12px;padding:12px 16px 16px;box-shadow:0 12px 40px #182a4e40;font-size:13px;max-height:calc(100vh - 24px);overflow:auto}.note-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #edf0f5;padding-bottom:12px;margin-bottom:14px}.note-head button{height:36px;border:0}.note-popup textarea{font-size:15px;min-height:40px;margin-bottom:0}.note-help{font-size:12px;color:#687186}.note-popup .primary{width:100%}.note-error{color:#b42b2b}.card{cursor:pointer;border-radius:8px;padding:18px 8px}.card.selected{background:#eef2ff}.note-popup .body{font-size:15px}.note-popup small{overflow-wrap:anywhere}
 
 /* Fixed header and composer; only the conversation scrolls. */
 #sidebar{display:flex;flex-direction:column;padding:0;overflow:hidden}.panel-head{padding:20px 20px 8px;flex-shrink:0}#sidebar>.filters{padding:8px 20px 14px;flex-shrink:0}#comments{flex:1;min-height:90px;overflow-y:auto;overscroll-behavior:contain;padding:8px 16px 0}.compose-dock{flex-shrink:0;border-top:1px solid #e0e5ee;padding:12px 16px;background:#fff;max-height:60%;overflow-y:auto}#composer{padding-top:0}#composer textarea{min-height:60px;margin:0;line-height:1.5;resize:none;overflow:hidden}#identity{font-size:12px;color:#687186}#identity button{height:36px;border:0;padding:0 3px;font-size:12px}#composer .compose-tools{justify-content:flex-start;margin-top:10px;gap:8px;align-items:center}#composer #pin{height:36px;width:auto;border:0;background:none;padding:0;color:#3155df;font-size:13px}#cancel{height:36px;padding:0 6px;font-size:12px}#composer .compose-tools #sendComment{margin-left:auto}#hint:empty{display:none}#hint{margin:6px 0;font-size:12px}.local-note{font-size:12px;line-height:1.4;color:#687186;margin:8px 0 0}.card-top strong{font-size:13px;overflow-wrap:anywhere;min-width:0}.number{flex-shrink:0}.reply-action{height:36px;border:0;background:none;padding:0 8px;color:#3155df}.card>button{height:36px;font-size:12px;padding:0 8px}.card>button+button{margin-left:8px}.card .body{margin:8px 0}.card .meta{font-size:12px}#replyContext{display:flex;justify-content:space-between;align-items:center;color:#3155df;font-size:13px;border-left:2px solid #3155df;padding-left:8px}#replyLabel{overflow-wrap:anywhere}#cancelReply{height:36px;min-width:36px;border:0;padding:0 5px;font-size:20px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:800px){#sidebar{height:60vh;max-height:60vh}.compose-dock{max-height:55%}.panel-head{padding-top:12px}#comments{min-height:60px}}
@@ -107,7 +107,7 @@ body.embed-mode #frameBox{border-radius:0;box-shadow:none}
 /* Panel trái (Các trang) + phải (Bình luận) kiểu Figma — mục 151: rộng 256px, dính sát header và sát mép trình duyệt,
    không bo/bóng, preview nằm giữa 2 panel (main chừa chỗ khi panel mở; viewport iframe không đổi, chỉ đổi scale).
    --rs-header-h do view.js đo theo header thật. Mobile (≤800px) giữ dạng sheet nổi đáy như cũ. */
-:root{--rs-panel-w:256px;--rs-header-h:56px}
+:root{--rs-panel-w:280px;--rs-header-h:56px}
 @media(min-width:801px){
 #sidebar,#pagesPanel{top:var(--rs-header-h);bottom:0;width:var(--rs-panel-w);border:0;border-radius:0;box-shadow:none}
 #sidebar{right:0;left:auto;border-left:1px solid #dce0e9}
@@ -170,7 +170,7 @@ body.rs-resizing iframe{pointer-events:none}
 header{height:56px;padding:0 16px;gap:16px}
 .brand{gap:8px}
 .brand-logo{width:auto;height:28px}
-.brand-title{font-size:16px}
+.brand-title{font-size:15px}
 #stage{height:calc(100vh - var(--rs-header-h) - 59px)}
 }
 @media(min-width:801px) and (max-width:1000px){header{height:auto;min-height:56px;padding:10px 16px}}
@@ -216,7 +216,7 @@ input[type=checkbox]:not([role=switch]):focus-visible{outline:none;box-shadow:0 
 .track-toggle{display:flex;width:fit-content;margin:0 0 16px}
 /* Component box + tiêu đề box dùng chung (mục 171): <section class="box"><h2 class="box-title">…</h2>…</section> */
 .box{background:#fff;border:1px solid #e0e5ee;border-radius:12px;overflow:hidden}
-.box .box-title{margin:0;padding:16px 20px;font-size:16px;font-weight:600;line-height:1.4;color:#202637;border-bottom:1px solid #edf0f5}
+.box .box-title{margin:0;padding:16px 20px;font-size:15px;font-weight:600;line-height:1.4;color:#202637;border-bottom:1px solid #edf0f5}
 .box-title+*>:first-child{border-top:0}
 /* Mục 172: icon 16px cho nút có chữ; email 1 dòng + "…" (title = email đầy đủ) */
 #changeEmail .icon,#pin .icon,.identity-signout .icon,.empty-state-action .icon{width:16px;height:16px}
@@ -280,7 +280,7 @@ input[type=checkbox]:not([role=switch]):focus-visible{outline:none;box-shadow:0 
 /* Mục 186: đầu popup bình luận gọn hơn + tiêu đề đúng component tiêu đề box (16px/600, line-height 1.4) */
 .note-popup{padding-top:8px}
 .note-head{padding-bottom:8px;margin-bottom:12px}
-.note-head>strong{font-size:16px;font-weight:600;line-height:1.4;color:#202637;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note-head>strong{font-size:15px;font-weight:600;line-height:1.4;color:#202637;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Mục 187: panel phải căn trái giống panel trái — mọi nội dung thẳng ở 16px (danh sách lùi 8px + thẻ padding 8px, như #pagesPanelList + .page-row) */
 @media(min-width:801px){
 #sidebar>.filters{padding-left:16px;padding-right:16px}
@@ -334,3 +334,59 @@ input[type=checkbox]:not([role=switch]):focus-visible{outline:none;box-shadow:0 
 #sidebar .compose-dock{padding:16px 8px}
 /* Mục 197: padding trên khu viết bình luận = 2 bên (8px) */
 #sidebar .compose-dock{padding-top:8px}
+/* Mục 198: đầu 2 panel theo chuẩn 16px của app — tiêu đề cách trái 16px, icon thu gọn cách phải 16px
+   (nút 36px, icon 16px → padding-right 6px), hàng tiêu đề 36px cách mép trên 10px; mô tả 0 16px 12px; hàng lọc 8px 16px 12px */
+@media(min-width:801px){
+#sidebar .panel-head,#pagesPanel .panel-head{padding:10px 6px 0 16px;min-height:46px}
+#sidebar .panel-head h1,#pagesPanel .panel-head h1{margin:0;line-height:36px}
+#pagesPanel .panel-caption{padding:2px 16px 12px;margin:0}
+#sidebar>.filters{padding:8px 16px 12px}
+}
+/* Mục 199: hàng nút lọc theo padding 8px của danh sách bình luận + khu nhập (trước 16px → "Đang sửa (n)" bị cắt) */
+@media(min-width:801px){#sidebar>.filters{padding-left:8px;padding-right:8px;gap:6px}}
+#sidebar>.filters button{padding:0 8px;gap:4px}
+/* Mục 204: nút "Đổi email" ở bước nhập mã dùng icon logout 16px (giống menu tài khoản) */
+#otpForm #otpBack{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+#otpForm #otpBack .icon{width:16px;height:16px}
+#otpForm #otpBack:hover,#otpForm #otpBack:focus-visible{background:transparent;color:#3155df}
+/* Mục 205: avatar tài khoản trên header 32×32px (trước 36px) */
+.account-avatar{width:32px;height:32px;min-width:32px;font-size:13px}
+/* Mục 206: ở 100%, khung Mobile/Tablet cao hơn vùng xem trước → cuộn dọc */
+#stage.scroll-y{overflow-y:auto}
+#stage.scroll-y #frameBox{margin-bottom:8px}
+/* Mục 207: menu zoom kiểu Figma — dùng chung style .account-menu (sáng), đặt fixed dưới nút "% ▾" */
+.zoom-menu{position:fixed;right:auto;min-width:260px;z-index:60}
+.zoom-menu-item{gap:10px}
+.zoom-menu-item .zoom-check{width:16px;height:16px;flex:none;display:inline-flex;color:#3155df}
+.zoom-menu-item .zoom-check .icon{width:16px;height:16px}
+.zoom-menu-label{flex:1;min-width:0;white-space:nowrap}
+.zoom-menu-key{font:inherit;font-size:12px;color:#9aa1b1;background:none;border:0;padding:0}
+.zoom-menu-item[aria-checked=true]{font-weight:600}
+.devices .zoom-toggle{gap:2px;min-width:68px}
+.devices .zoom-toggle>.icon{width:16px;height:16px;color:#687186}
+.devices .zoom-toggle[aria-expanded=true]{background:#e9eeff;color:#294fd5;border-color:#c5d0ff}
+/* Mục 208: nút tỷ lệ xem cố định 76px (không xô lệch header khi đổi 62% ↔ 100%) */
+.devices .zoom-toggle{width:76px;min-width:76px;justify-content:space-between;padding:0 8px 0 10px;font-variant-numeric:tabular-nums}
+.devices .zoom-toggle .zoom-label{flex:1;text-align:center}
+/* Mục 210: dấu tick menu zoom màu brand (trước bị `.account-menu-item .icon{color:#687186}` đè thành xám) */
+.zoom-menu-item .zoom-check .icon{color:#3155df}
+/* Mục 211: nút tỷ lệ xem luôn màu thường; khi menu mở chỉ nền xám nhạt */
+.devices .zoom-toggle,.devices .zoom-toggle[aria-expanded=true]{color:#202637;border-color:#dce0e9;background:#fff}
+.devices .zoom-toggle[aria-expanded=true],.devices .zoom-toggle:hover{background:#f3f5fa}
+/* Mục 212: mọi chữ 16px → 14px. Ngoại lệ: ô nhập popup trên thiết bị cảm ứng giữ 16px (Safari iOS/iPadOS tự phóng to trang khi focus ô có chữ < 16px) */
+@media (pointer:coarse){.note-popup textarea{font-size:16px}}
+/* Mục 214: Toàn màn hình — main giữ lề 24px như khi không có panel; panel mở thì nằm đè lên khung (khung không co lại) */
+@media(min-width:801px){body.rs-fullwidth main,body.rs-fullwidth.rs-pages-open main,body.rs-fullwidth.rs-comments-open main{padding-left:24px;padding-right:24px}}
+/* Mục 215: Toàn màn hình kiểu xem web thật — header ẩn, hiện khi đưa chuột lên mép trên; khung tràn hết cửa sổ */
+.header-hotzone{display:none}
+@media(min-width:801px){
+body.rs-immersive .header-hotzone{display:block;position:fixed;top:0;left:0;right:0;height:6px;z-index:31}
+body.rs-immersive header{position:fixed;top:0;left:0;right:0;z-index:32;transform:translateY(-100%);transition:transform .18s ease,box-shadow .18s ease}
+body.rs-immersive.rs-header-peek header{transform:none;box-shadow:0 6px 20px #19264c24}
+body.rs-immersive main{padding:0!important}
+body.rs-immersive #stage{height:100vh;height:100dvh}
+body.rs-immersive #frameBox{border-radius:0;box-shadow:none}
+body.rs-immersive #pagesPanelReopen,body.rs-immersive #sidebarReopen{display:none!important}
+}
+.rs-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#202637;color:#fff;font-size:13px;line-height:1.4;padding:8px 14px;border-radius:8px;z-index:70;box-shadow:0 8px 24px #19264c33;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.rs-toast.show{opacity:1}
